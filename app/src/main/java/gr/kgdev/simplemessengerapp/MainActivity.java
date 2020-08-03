@@ -1,5 +1,6 @@
 package gr.kgdev.simplemessengerapp;
 
+import androidx.appcompat.app.ActionBar;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentTransaction;
@@ -9,23 +10,27 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.widget.Toast;
 
+import org.json.JSONException;
+import org.json.JSONObject;
+
 import gr.kgdev.simplemessengerapp.fragments.ChatFragment;
 import gr.kgdev.simplemessengerapp.fragments.UsersListFragment;
+import gr.kgdev.simplemessengerapp.models.User;
 
 public class MainActivity extends AppCompatActivity {
 
     private static AppCompatActivity instance;
     private boolean twice = false;
 
-    private static AppCompatActivity getInstance() {
+    public static AppCompatActivity getInstance() {
         return instance;
     }
 
-    public static void changeToChatFragment() {
+    public static void changeToChatFragment(User user) throws JSONException {
         if (instance == null)
             throw new NullPointerException("MainActivity has not been initialized yet!");
 
-        Fragment newFragment = new ChatFragment();
+        Fragment newFragment = new ChatFragment(new User(new JSONObject("{'USERNAME' : 'Paris Kolovos', 'ACTIVE' : 1, 'ID' : 1}")), user);
         FragmentTransaction transaction = MainActivity.getInstance().getSupportFragmentManager().beginTransaction();
         transaction.replace(R.id.container, newFragment);
         transaction.addToBackStack(null);
@@ -35,6 +40,8 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        getSupportActionBar().setDisplayOptions(ActionBar.DISPLAY_SHOW_HOME | ActionBar.DISPLAY_SHOW_TITLE);
+        getSupportActionBar().setIcon(R.drawable.batmobile);
         setContentView(R.layout.main_activity);
         if (savedInstanceState == null) {
             getSupportFragmentManager().beginTransaction()

@@ -6,14 +6,20 @@ import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.recyclerview.widget.RecyclerView;
 
+import org.json.JSONException;
+
+import java.util.ArrayList;
+
 import gr.kgdev.simplemessengerapp.MainActivity;
 import gr.kgdev.simplemessengerapp.R;
+import gr.kgdev.simplemessengerapp.models.User;
 
 public class UsersAdapter extends RecyclerView.Adapter<UsersAdapter.MyViewHolder> {
-    private String[][] mDataset;
+    private ArrayList<User> mDataset;
 
     // Provide a reference to the views for each data item
     // Complex data items may need more than one view per item, and
@@ -21,6 +27,7 @@ public class UsersAdapter extends RecyclerView.Adapter<UsersAdapter.MyViewHolder
     public static class MyViewHolder extends RecyclerView.ViewHolder {
         // each data item is just a string in this case
         public RelativeLayout linearLayout;
+
         public MyViewHolder(RelativeLayout v) {
             super(v);
             linearLayout = v;
@@ -28,7 +35,7 @@ public class UsersAdapter extends RecyclerView.Adapter<UsersAdapter.MyViewHolder
     }
 
     // Provide a suitable constructor (depends on the kind of dataset)
-    public UsersAdapter(String[][] myDataset) {
+    public UsersAdapter(ArrayList<User> myDataset) {
         mDataset = myDataset;
     }
 
@@ -49,19 +56,24 @@ public class UsersAdapter extends RecyclerView.Adapter<UsersAdapter.MyViewHolder
     public void onBindViewHolder(MyViewHolder holder, int position) {
         // - get element from your dataset at this position
         // - replace the contents of the view with that element
-        ((TextView) holder.linearLayout.findViewById(R.id.username)).setText(mDataset[position][0]);
-        if (mDataset[position][1].equals("1")) {
+        User user = mDataset.get(position);
+        ((TextView) holder.linearLayout.findViewById(R.id.username)).setText(user.getUsername());
+        if (user.isActive()) {
             ((TextView) holder.linearLayout.findViewById(R.id.status)).setText("Active");
-            ((TextView) holder.linearLayout.findViewById(R.id.status)).setTextColor(Color.GREEN);
-        }
-        else {
+            ((TextView) holder.linearLayout.findViewById(R.id.status)).setTextColor(Color.BLUE);
+        } else {
             ((TextView) holder.linearLayout.findViewById(R.id.status)).setText("Inactive");
             ((TextView) holder.linearLayout.findViewById(R.id.status)).setTextColor(Color.RED);
         }
-        ((ImageView) holder.linearLayout.findViewById(R.id.image)).setImageResource(android.R.drawable.ic_dialog_alert);
+        ((ImageView) holder.linearLayout.findViewById(R.id.image)).setImageResource(R.drawable.batmobile);
         holder.linearLayout.setOnClickListener(v -> {
             System.out.println("Clicked!");
-            MainActivity.changeToChatFragment();
+            try {
+                MainActivity.changeToChatFragment(user);
+            } catch (JSONException e) {
+                e.printStackTrace();
+                MainActivity.getInstance().runOnUiThread(() -> Toast.makeText(MainActivity.getInstance(), e.getMessage(), Toast.LENGTH_SHORT).show());
+            }
         });
 
     }
@@ -69,6 +81,6 @@ public class UsersAdapter extends RecyclerView.Adapter<UsersAdapter.MyViewHolder
     // Return the size of your dataset (invoked by the layout manager)
     @Override
     public int getItemCount() {
-        return mDataset.length;
+        return mDataset.size();
     }
 }

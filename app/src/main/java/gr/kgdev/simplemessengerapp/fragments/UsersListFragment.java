@@ -14,7 +14,11 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import org.json.JSONArray;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import gr.kgdev.simplemessengerapp.R;
+import gr.kgdev.simplemessengerapp.models.User;
 import gr.kgdev.simplemessengerapp.utils.HTTPClient;
 import gr.kgdev.simplemessengerapp.MainViewModel;
 
@@ -53,13 +57,12 @@ public class UsersListFragment extends Fragment {
     private void setAdapter() {
         HTTPClient.executeAsync(() -> {
             try {
-                JSONArray users = new JSONArray(HTTPClient.GET("http://192.168.2.6:8080/get/active_users_details"));
-                String[][] usersArr = new String[users.length()][2];
-                for (int i = 0; i < users.length(); i++) {
-                    usersArr[i][0] = users.getJSONObject(i).getString("USERNAME");
-                    usersArr[i][1] = users.getJSONObject(i).getString("active");
-                }
-                mAdapter = new UsersAdapter(usersArr);
+                JSONArray usersJson = new JSONArray(HTTPClient.GET("http://192.168.2.6:8080/get/active_users_details"));
+                ArrayList<User> users = new ArrayList<>();
+                for (int i = 0; i < usersJson.length(); i++)
+                    users.add(new User(usersJson.getJSONObject(i)));
+
+                mAdapter = new UsersAdapter(users);
                 getActivity().runOnUiThread(() -> recyclerView.setAdapter(mAdapter));
             } catch (Throwable e) {
                 e.printStackTrace();

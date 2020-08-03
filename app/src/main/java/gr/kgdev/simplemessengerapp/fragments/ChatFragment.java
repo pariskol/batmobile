@@ -5,6 +5,7 @@ import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -27,6 +28,7 @@ import java.util.Date;
 import co.intentservice.chatui.ChatView;
 import co.intentservice.chatui.models.ChatMessage;
 import gr.kgdev.simplemessengerapp.R;
+import gr.kgdev.simplemessengerapp.models.User;
 import gr.kgdev.simplemessengerapp.utils.HTTPClient;
 import gr.kgdev.simplemessengerapp.MainViewModel;
 
@@ -38,13 +40,16 @@ public class ChatFragment extends Fragment {
     private RecyclerView.LayoutManager layoutManager;
     private ArrayList<ChatMessage> chatMessages;
     private ChatView chatView;
+    private User appUser;
+    private User contactUser;
 
     public ChatFragment() {
 
     }
 
-    public ChatFragment(String appUser, String contactUser) {
-
+    public ChatFragment(User appUser, User contactUser) {
+        this.appUser = appUser;
+        this.contactUser = contactUser;
     }
 
     @Nullable
@@ -59,12 +64,13 @@ public class ChatFragment extends Fragment {
         chatMessages = new ArrayList<>();
         HTTPClient.executeAsync(() -> {
             try {
-                convertJsonToChatMessages(new JSONArray(HTTPClient.GET("http://192.168.2.6:8080/get/messages?FROM_USER=1&TO_USER=2")));
-                convertJsonToChatMessages(new JSONArray(HTTPClient.GET("http://192.168.2.6:8080/get/messages?FROM_USER=2&TO_USER=1")));
+                convertJsonToChatMessages(new JSONArray(HTTPClient.GET("http://192.168.2.6:8080/get/messages?FROM_USER=" + appUser.getId() + "&TO_USER=" + contactUser.getId())));
+                convertJsonToChatMessages(new JSONArray(HTTPClient.GET("http://192.168.2.6:8080/get/messages?FROM_USER=" + contactUser.getId() + "&TO_USER=" + appUser.getId())));
                 chatMessages.sort(Comparator.comparing(ChatMessage::getTimestamp));
                 getActivity().runOnUiThread(() -> chatView.addMessages(chatMessages));
             } catch (Throwable t) {
                 t.printStackTrace();
+                Toast.makeText(getActivity(), t.getMessage(), Toast.LENGTH_SHORT).show();
             }
         });
     }
@@ -75,7 +81,7 @@ public class ChatFragment extends Fragment {
             String message = messages.getJSONObject(i).getString("MESSAGE");
             int userId = messages.getJSONObject(i).getInt("FROM_USER");
             long millis = convertToDate(messages.getJSONObject(i).getString("TIMESTAMP")).getTime();
-            ChatMessage.Type type = userId == 1 ? ChatMessage.Type.RECEIVED : ChatMessage.Type.SENT;
+            ChatMessage.Type type = userId == appUser.getId() ? ChatMessage.Type.SENT : ChatMessage.Type.RECEIVED;
             chatMessages.add(new ChatMessage(message, millis, type));
         }
     }
@@ -100,13 +106,14 @@ public class ChatFragment extends Fragment {
             try {
                 JSONObject json = new JSONObject();
                 json.put("MESSAGE", chatMessage.getMessage());
-                json.put("FROM_USER", 1);
-                json.put("TO_USER", 2);
+                json.put("FROM_USER", appUser.getId());
+                json.put("TO_USER", contactUser.getId());
                 HTTPClient.POST("http://192.168.2.6:8080/save?table=messages", json);
                 // here we add the message to view
                 getActivity().runOnUiThread(() -> chatView.addMessage(chatMessage));
-            } catch (JSONException | IOException e) {
+            } catch (Throwable e) {
                 e.printStackTrace();
+                Toast.makeText(getActivity(), e.getMessage(), Toast.LENGTH_SHORT).show();
             }
         });
         // we return false because message will be added to view if POST request executed successfully
