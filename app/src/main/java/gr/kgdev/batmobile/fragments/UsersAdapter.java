@@ -1,4 +1,4 @@
-package gr.kgdev.simplemessengerapp.fragments;
+package gr.kgdev.batmobile.fragments;
 
 import android.graphics.Color;
 import android.view.LayoutInflater;
@@ -14,9 +14,9 @@ import org.json.JSONException;
 
 import java.util.ArrayList;
 
-import gr.kgdev.simplemessengerapp.MainActivity;
-import gr.kgdev.simplemessengerapp.R;
-import gr.kgdev.simplemessengerapp.models.User;
+import gr.kgdev.batmobile.activities.MainActivity;
+import gr.kgdev.batmobile.R;
+import gr.kgdev.batmobile.models.User;
 
 public class UsersAdapter extends RecyclerView.Adapter<UsersAdapter.MyViewHolder> {
     private ArrayList<User> mDataset;
@@ -58,6 +58,8 @@ public class UsersAdapter extends RecyclerView.Adapter<UsersAdapter.MyViewHolder
         // - replace the contents of the view with that element
         User user = mDataset.get(position);
         ((TextView) holder.linearLayout.findViewById(R.id.username)).setText(user.getUsername());
+        TextView notificationTextView = (TextView) holder.linearLayout.findViewById(R.id.badge);
+        notificationTextView.setText("1");
         if (user.isActive()) {
             ((TextView) holder.linearLayout.findViewById(R.id.status)).setText("Active");
             ((TextView) holder.linearLayout.findViewById(R.id.status)).setTextColor(Color.BLUE);
@@ -69,7 +71,7 @@ public class UsersAdapter extends RecyclerView.Adapter<UsersAdapter.MyViewHolder
         holder.linearLayout.setOnClickListener(v -> {
             System.out.println("Clicked!");
             try {
-                MainActivity.changeToChatFragment(user);
+                MainActivity.loadChatFragment(user);
             } catch (JSONException e) {
                 e.printStackTrace();
                 MainActivity.getInstance().runOnUiThread(() -> Toast.makeText(MainActivity.getInstance(), e.getMessage(), Toast.LENGTH_SHORT).show());

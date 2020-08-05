@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#222121"
+    android:gravity="center"
+    android:orientation="vertical">
+
+    <ImageView
+        android:id="@+id/imageView"
+        android:layout_width="148dp"
+        android:layout_height="157dp"
+        android:layout_weight="0.5"
+        app:srcCompat="@drawable/batmobile" />
+
+    <EditText
+        android:id="@+id/username"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:backgroundTint="#FFFFFF"
+        android:ems="10"
+        android:foregroundTint="#FFFFFF"
+        android:inputType="textPersonName"
+        android:layout_weight="0"
+        android:hint="Username"
+        android:textColor="@color/white"
+        android:textColorHint="@color/very_dark_gray" />
+
+    <EditText
+        android:id="@+id/password"
+        android:layout_weight="0"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:backgroundTint="#FFFFFF"
+        android:ems="10"
+        android:hint="Password"
+        android:foregroundTint="#FFFFFF"
+        android:inputType="textPassword"
+        android:textColor="@color/white"
+        android:textColorHint="@color/very_dark_gray"/>
+
+    <Button
+        android:id="@+id/login_button"
+        android:layout_width="201dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="0"
+        android:layout_marginTop="20dp"
+        android:background="@color/colorAccent"
+        android:text="Login"
+        android:textColor="@color/white" />
+
+    <TextView
+        android:id="@+id/textView"
+        android:layout_width="195dp"
+        android:layout_height="22dp"
+        android:gravity="bottom|center"
+        android:text="By KGDev"
+        android:layout_weight="0.5"
+        android:textColor="@color/white" />
+
+</LinearLayout>

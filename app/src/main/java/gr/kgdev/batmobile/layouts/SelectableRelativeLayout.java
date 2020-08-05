@@ -1,4 +1,4 @@
-package gr.kgdev.simplemessengerapp.layouts;
+package gr.kgdev.batmobile.layouts;
 
 import android.annotation.TargetApi;
 import android.content.Context;

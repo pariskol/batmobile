@@ -1,4 +1,4 @@
-package gr.kgdev.simplemessengerapp;
+package gr.kgdev.batmobile;
 
 import org.junit.Test;
 
