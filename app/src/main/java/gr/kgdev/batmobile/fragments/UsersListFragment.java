@@ -19,11 +19,14 @@ import org.json.JSONArray;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 import gr.kgdev.batmobile.R;
 import gr.kgdev.batmobile.activities.MainViewModel;
 import gr.kgdev.batmobile.models.User;
+import gr.kgdev.batmobile.utils.MediaUtils;
 import gr.kgdev.batmobile.utils.AppCache;
 import gr.kgdev.batmobile.utils.HTTPClient;
 
@@ -32,10 +35,12 @@ public class UsersListFragment extends Fragment {
 
     private MainViewModel mViewModel;
     private RecyclerView recyclerView;
-    private RecyclerView.Adapter mAdapter;
+    private UsersAdapter mAdapter;
     private RecyclerView.LayoutManager layoutManager;
     private SearchView searchView;
     private ArrayList<User> users;
+
+    private Thread postmanDaemon;
 
     public static UsersListFragment newInstance() {
         return new UsersListFragment();
@@ -45,9 +50,10 @@ public class UsersListFragment extends Fragment {
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container,
                              @Nullable Bundle savedInstanceState) {
-        return inflater.inflate(R.layout.main_fragment, container, false);
+        return inflater.inflate(R.layout.user_list_fragment, container, false);
     }
 
+    @RequiresApi(api = Build.VERSION_CODES.N_MR1)
     @Override
     public void onViewCreated(View view, @Nullable Bundle savedInstanceState) {
         recyclerView = (RecyclerView) getView().findViewById(R.id.my_recycler_view);
@@ -56,6 +62,8 @@ public class UsersListFragment extends Fragment {
 
             @Override
             public boolean onQueryTextChange(String newText) {
+                if (newText.isEmpty())
+                    UsersListFragment.this.filterUsers("");
                 return false;
             }
 
@@ -70,6 +78,9 @@ public class UsersListFragment extends Fragment {
             filterUsers("");
             return false;
         });
+        searchView.setSubmitButtonEnabled(true);
+        searchView.setIconifiedByDefault(false);
+        searchView.setRevealOnFocusHint(true);
 
         // use this setting to improve performance if you know that changes
         // in content do not change the layout size of the RecyclerView
@@ -91,7 +102,8 @@ public class UsersListFragment extends Fragment {
                         users.add(new User(usersJson.getJSONObject(i)));
                 }
 
-                mAdapter = new UsersAdapter(users);
+                mAdapter = new UsersAdapter(users, getActivity());
+                startPostmanDaemon();
                 getActivity().runOnUiThread(() -> recyclerView.setAdapter(mAdapter));
             } catch (Throwable e) {
                 e.printStackTrace();
@@ -101,11 +113,16 @@ public class UsersListFragment extends Fragment {
     }
 
     private void filterUsers(String query) {
-        List<User> filteredUsers = users.stream().filter(user -> {
-            Boolean answer = user.getUsername().toLowerCase().contains(query);
-            return answer;
-        }).collect(Collectors.toList());
-        mAdapter = new UsersAdapter((ArrayList<User>) filteredUsers);
+        List<User> filteredUsers = null;
+        if (query.isEmpty()) {
+            filteredUsers = users;
+        } else {
+            filteredUsers = users.stream().filter(user -> {
+                Boolean answer = user.getUsername().toLowerCase().contains(query.toLowerCase());
+                return answer;
+            }).collect(Collectors.toList());
+        }
+        mAdapter = new UsersAdapter((ArrayList<User>) filteredUsers, getActivity());
         getActivity().runOnUiThread(() -> recyclerView.setAdapter(mAdapter));
     }
 
@@ -116,4 +133,66 @@ public class UsersListFragment extends Fragment {
         // TODO: Use the ViewModel
     }
 
+    private void getUnreadMessagesCountPerUser() {
+        AtomicBoolean playSound = new AtomicBoolean(false);
+        AtomicInteger totalCount = new AtomicInteger(0);
+        final int oldTotalCount = mAdapter.getTotalUnreadMessagesCount();
+        HTTPClient.executeAsync(() -> {
+            try {
+                String url = HTTPClient.BASE_URL + "/get/unread_messages?TO_USER=" + AppCache.getAppUser().getId();
+                JSONArray unreadMessages = new JSONArray(HTTPClient.GET(url));
+                for (int i = 0; i < unreadMessages.length(); i++) {
+                    Integer userId = unreadMessages.getJSONObject(i).getInt("FROM_USER");
+                    Integer count = unreadMessages.getJSONObject(i).getInt("UNREAD_NUM");
+                    totalCount.getAndAdd(count);
+                    mAdapter.setNotificationsForUser(userId, count);
+                    if (count > 0)
+                        playSound.set(true);
+                }
+
+                if (this.isVisible()) {
+                    getActivity().runOnUiThread(() -> {
+                        mAdapter.notifyDataSetChanged();
+                        if (playSound.get() && totalCount.get() > oldTotalCount)
+                            MediaUtils.playNotificationSound(getContext());
+                    });
+                }
+            } catch (Throwable t) {
+                t.printStackTrace();
+            }
+        });
+    }
+
+    private void startPostmanDaemon() {
+        postmanDaemon = new Thread(() -> {
+            try {
+                while (!postmanDaemon.isInterrupted()) {
+                    getUnreadMessagesCountPerUser();
+                    postmanDaemon.sleep(1000);
+                }
+            } catch (InterruptedException e) {
+                System.out.println(postmanDaemon.getName() + " is now exiting...");
+            }
+        }, UsersListFragment.class.getSimpleName() + ": Postman Daemon");
+        postmanDaemon.setDaemon(true);
+        postmanDaemon.start();
+    }
+
+    public void stopPostmanDaemon() {
+        if (postmanDaemon != null)
+            postmanDaemon.interrupt();
+    }
+
+    @Override
+    public void onPause() {
+        super.onPause();
+        stopPostmanDaemon();
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        if (postmanDaemon != null && !postmanDaemon.isAlive())
+            startPostmanDaemon();
+    }
 }

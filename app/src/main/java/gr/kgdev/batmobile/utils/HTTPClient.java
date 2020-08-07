@@ -24,8 +24,8 @@ public class HTTPClient {
     private static OkHttpClient client = new OkHttpClient();
     private static final MediaType JSON = MediaType.parse("application/json; charset=utf-8");
 
-//    public static String BASE_URL = "https://onelineman.eu";
-    public static String BASE_URL = "http://192.168.2.6:8080";
+    public static String BASE_URL = "https://onelineman.eu";
+//    public static String BASE_URL = "http://192.168.2.6:8080";
 
     public static void executeAsync(Runnable runnable) {
         if (EXECUTOR_SERVICE == null)

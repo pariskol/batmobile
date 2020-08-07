@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    tools:context="gr.kgdev.batmobile.activities.MainActivity" android:layout_height="50dp" android:layout_width="match_parent">
+    <item android:id="@+id/item_one"
+        android:icon="@drawable/batmobile"
+        android:title="Item One"
+        app:showAsAction="always"/>
+<!--    <item-->
+<!--        android:id="@+id/search"-->
+<!--        android:icon="@andrpoid"-->
+<!--        android:title="@string/search"-->
+<!--        app:actionViewClass="android.support.v7.widget.SearchView"-->
+<!--        app:showAsAction="always" />-->
+        <!--sub-menu-->
+</menu>
