@@ -6,8 +6,11 @@ import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.os.Build;
 import android.os.IBinder;
+
+import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
 import org.json.JSONArray;
 
@@ -20,7 +23,7 @@ public class NotificationsService extends Service {
     private ServiceEchoReceiver broadcastReceiver;
     Thread postmanDaemon;
     private static int PREVIOUS_COUNT = 0;
-    private static boolean ENABLE_DAEMON = false;
+    private static boolean ENABLE_DAEMON = true;
 
     public NotificationsService() {
     }
@@ -39,24 +42,25 @@ public class NotificationsService extends Service {
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
+        startPostmanDaemon();
         return START_STICKY;
     }
 
     @Override
     public void onCreate() {
-//        broadcastReceiver = new ServiceEchoReceiver(this);
-//        LocalBroadcastManager
-//                .getInstance(this)
-//                .registerReceiver(broadcastReceiver, new IntentFilter("ping"));
+        broadcastReceiver = new ServiceEchoReceiver(this);
+        LocalBroadcastManager
+                .getInstance(this)
+                .registerReceiver(broadcastReceiver, new IntentFilter("ping"));
         //do not forget to deregister the receiver when the service is destroyed to avoid
         //any potential memory leaks
-        startPostmanDaemon();
     }
+
 
     @Override
     public void onDestroy() {
         super.onDestroy();
-//        LocalBroadcastManager.getInstance(this).unregisterReceiver(broadcastReceiver);
+        LocalBroadcastManager.getInstance(this).unregisterReceiver(broadcastReceiver);
         stopPostmanDaemon();
     }
 
@@ -77,7 +81,8 @@ public class NotificationsService extends Service {
     }
 
     public void stopPostmanDaemon() {
-        postmanDaemon.interrupt();
+        if (postmanDaemon != null)
+            postmanDaemon.interrupt();
     }
 
     private void getUnreadMessagesCount() {

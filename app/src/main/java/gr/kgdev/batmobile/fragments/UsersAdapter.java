@@ -117,7 +117,7 @@ public class UsersAdapter extends RecyclerView.Adapter<UsersAdapter.MyViewHolder
         return usersDataset.get(pos);
     }
 
-    public void setNotificationsForUser(Integer userId, Integer num) {
+    public synchronized void setNotificationsForUser(Integer userId, Integer num) {
         User targetUser = usersDataset.stream().filter(user -> user.getId() == userId).findAny().get();
         notificationsMap.put(targetUser.getId(), num);
     }

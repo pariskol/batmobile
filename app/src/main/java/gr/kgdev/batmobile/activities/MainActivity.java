@@ -1,6 +1,9 @@
 package gr.kgdev.batmobile.activities;
 
+import android.content.BroadcastReceiver;
+import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.media.AudioManager;
 import android.media.MediaPlayer;
 import android.media.RingtoneManager;
@@ -16,6 +19,7 @@ import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentTransaction;
+import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
 import org.json.JSONException;
 
@@ -31,14 +35,15 @@ import gr.kgdev.batmobile.services.NotificationsService;
 @RequiresApi(api = Build.VERSION_CODES.N)
 public class MainActivity extends AppCompatActivity {
 
-    private boolean twice = false;
     private MediaPlayer mediaPlayer;
 
-//    private BroadcastReceiver pong = new BroadcastReceiver(){
-//        public void onReceive (Context context, Intent intent) {
-//            serviceRunning = true;
-//        }
-//    };
+    private BroadcastReceiver pong = new BroadcastReceiver(){
+        public void onReceive (Context context, Intent intent) {
+            serviceRunning = true;
+        }
+    };
+
+    private boolean serviceRunning = false;
 
     public void initMediaPlayer() {
         Uri defaultRingtoneUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION);
@@ -77,14 +82,13 @@ public class MainActivity extends AppCompatActivity {
         NotificationsService.enableNotifications(false);
         startNotificationService();
         initMediaPlayer();
-//        stopNotificationService();
 
-//        LocalBroadcastManager.getInstance(this).registerReceiver(pong, new IntentFilter("pong"));
-//        LocalBroadcastManager.getInstance(this).sendBroadcastSync(new Intent("ping"));
-//
-//        if(!serviceRunning){
-//            startService(new Intent(this, NotificationsService.class));
-//        }
+        LocalBroadcastManager.getInstance(this).registerReceiver(pong, new IntentFilter("pong"));
+        LocalBroadcastManager.getInstance(this).sendBroadcastSync(new Intent("ping"));
+
+        if(!serviceRunning){
+            startNotificationService();
+        }
     }
 
     public void startNotificationService() {
@@ -94,30 +98,31 @@ public class MainActivity extends AppCompatActivity {
 
     public void stopNotificationService() {
             stopService(new Intent(this, NotificationsService.class));
-//        }
     }
 
     @Override
     protected void onPause() {
         super.onPause();
         NotificationsService.enableNotifications(true);
-//        startNotificationService();
-//        finish();
     }
 
     @Override
     protected void onStop() {
         super.onStop();
         NotificationsService.enableNotifications(true);
-//        startNotificationService();
-//        finish();
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        NotificationsService.enableNotifications(true);
     }
 
     @Override
     protected void onResume() {
         super.onResume();
         NotificationsService.enableNotifications(false);
-//        stopNotificationService();
+//        startNotificationService();
     }
 
     @Override
@@ -127,17 +132,11 @@ public class MainActivity extends AppCompatActivity {
             getSupportActionBar().setTitle("BATMobile");
         }
         else {
-//            if (twice == true) {
-                Intent intent = new Intent(Intent.ACTION_MAIN);
-                intent.addCategory(Intent.CATEGORY_HOME);
-                intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
-                startActivity(intent);
-//                finish();
-//            }
-//            twice = true;
-//            //if we push the back button twice in 3s we exit the app,otherwise app will continue to run
-//            Toast.makeText(this, "Please press BACK again to exit", Toast.LENGTH_SHORT).show();
-//            new Handler().postDelayed(() -> twice = false, 2000);
+            Intent intent = new Intent(Intent.ACTION_MAIN);
+            intent.addCategory(Intent.CATEGORY_HOME);
+            intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+            startActivity(intent);
+            NotificationsService.enableNotifications(true);
         }
 
     }

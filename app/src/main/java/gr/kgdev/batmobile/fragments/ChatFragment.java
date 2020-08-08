@@ -96,8 +96,6 @@ public class ChatFragment extends Fragment {
                             chatView.addMessages(chatMessages);
                         });
                     }
-//                    if (playSound.get())
-//                        MediaUtils.playNotificationSound(getContext());
                 }
             } catch (Throwable t) {
                 t.printStackTrace();
