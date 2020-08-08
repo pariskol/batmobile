@@ -5,14 +5,9 @@ import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.Service;
-import android.content.BroadcastReceiver;
-import android.content.Context;
 import android.content.Intent;
-import android.content.IntentFilter;
 import android.os.Build;
 import android.os.IBinder;
-
-import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
 import org.json.JSONArray;
 
@@ -24,13 +19,20 @@ import gr.kgdev.batmobile.utils.HTTPClient;
 public class NotificationsService extends Service {
     private ServiceEchoReceiver broadcastReceiver;
     Thread postmanDaemon;
-    private int previousCount = 0;
+    private static int PREVIOUS_COUNT = 0;
+    private static boolean ENABLE_DAEMON = false;
 
     public NotificationsService() {
     }
 
+    public synchronized static void enableNotifications(boolean enabled) {
+        ENABLE_DAEMON = enabled;
+        PREVIOUS_COUNT = 0;
+    }
+
     @Override
     public IBinder onBind(Intent intent) {
+        System.out.println("Notifications Service started");
         // TODO: Return the communication channel to the service.
         throw new UnsupportedOperationException("Not yet implemented");
     }
@@ -62,7 +64,8 @@ public class NotificationsService extends Service {
         postmanDaemon = new Thread(() -> {
             try {
                 while (!postmanDaemon.isInterrupted()) {
-                    getUnreadMessagesCount();
+                    if (ENABLE_DAEMON)
+                        getUnreadMessagesCount();
                     postmanDaemon.sleep(5000);
                 }
             } catch (InterruptedException e) {
@@ -86,10 +89,10 @@ public class NotificationsService extends Service {
                 for (int i = 0; i < unreadMessages.length(); i++)
                      count = unreadMessages.getJSONObject(i).getInt("UNREAD_NUM");
 
-                if (count > 0 && count > previousCount)
+                if (count > 0 && count > PREVIOUS_COUNT)
                     createNotification();
 
-                previousCount = count;
+                PREVIOUS_COUNT = count;
 
             } catch (Throwable t) {
                 t.printStackTrace();

@@ -17,11 +17,8 @@ import androidx.recyclerview.widget.RecyclerView;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Comparator;
-import java.util.Date;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import co.intentservice.chatui.ChatView;
@@ -31,7 +28,6 @@ import gr.kgdev.batmobile.activities.MainViewModel;
 import gr.kgdev.batmobile.models.Message;
 import gr.kgdev.batmobile.models.User;
 import gr.kgdev.batmobile.utils.ConvertUtils;
-import gr.kgdev.batmobile.utils.MediaUtils;
 import gr.kgdev.batmobile.utils.HTTPClient;
 
 @RequiresApi(api = Build.VERSION_CODES.N)
@@ -45,7 +41,7 @@ public class ChatFragment extends Fragment {
     private ChatView chatView;
     private User appUser;
     private User contactUser;
-    private Thread postmanDaemon;
+    private static Thread postmanDaemon;
     private ArrayList<Integer> allMessageIds;
 
     public ChatFragment(User appUser, User contactUser) {
@@ -93,8 +89,7 @@ public class ChatFragment extends Fragment {
                 }
 
                 if (newChatMessages.size() > 0 ) {
-                    chatMessages.addAll(newChatMessages);
-                    chatMessages.sort(Comparator.comparing(ChatMessage::getTimestamp));
+                    setMessages(newChatMessages);
                     if (getActivity() != null) {
                         getActivity().runOnUiThread(() -> {
                             chatView.clearMessages();
@@ -110,6 +105,11 @@ public class ChatFragment extends Fragment {
         });
     }
 
+    private synchronized void setMessages(ArrayList<ChatMessage> newChatMessages) {
+        chatMessages.addAll(newChatMessages);
+        chatMessages.sort(Comparator.comparing(ChatMessage::getTimestamp));
+    }
+
     @Override
     public void onViewCreated(View view, @Nullable Bundle savedInstanceState) {
         chatView = (ChatView) getView().findViewById(R.id.chat_view);
@@ -119,7 +119,8 @@ public class ChatFragment extends Fragment {
         startPostmanDaemon();
     }
 
-    private void startPostmanDaemon() {
+    private synchronized void startPostmanDaemon() {
+        stopPostmanDaemon();
         postmanDaemon = new Thread(() -> {
             try {
                 while (!postmanDaemon.isInterrupted()) {
@@ -167,11 +168,11 @@ public class ChatFragment extends Fragment {
     @Override
     public void onResume() {
         super.onResume();
-        if (!postmanDaemon.isAlive())
-            startPostmanDaemon();
+        startPostmanDaemon();
     }
 
-    private void stopPostmanDaemon() {
+    private synchronized void stopPostmanDaemon() {
+        if (postmanDaemon != null)
         postmanDaemon.interrupt();
     }
 

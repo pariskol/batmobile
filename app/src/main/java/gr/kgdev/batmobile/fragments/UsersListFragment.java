@@ -24,9 +24,9 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 import gr.kgdev.batmobile.R;
+import gr.kgdev.batmobile.activities.MainActivity;
 import gr.kgdev.batmobile.activities.MainViewModel;
 import gr.kgdev.batmobile.models.User;
-import gr.kgdev.batmobile.utils.MediaUtils;
 import gr.kgdev.batmobile.utils.AppCache;
 import gr.kgdev.batmobile.utils.HTTPClient;
 
@@ -40,7 +40,7 @@ public class UsersListFragment extends Fragment {
     private SearchView searchView;
     private ArrayList<User> users;
 
-    private Thread postmanDaemon;
+    private static Thread postmanDaemon;
 
     public static UsersListFragment newInstance() {
         return new UsersListFragment();
@@ -89,6 +89,7 @@ public class UsersListFragment extends Fragment {
         // use a linear layout manager
         layoutManager = new LinearLayoutManager(getActivity().getApplicationContext());
         recyclerView.setLayoutManager(layoutManager);
+//        recyclerView.addOnItemTouchListener(new UserListTouchListener(view, getActivity()));
         setAdapter();
     }
 
@@ -134,6 +135,9 @@ public class UsersListFragment extends Fragment {
     }
 
     private void getUnreadMessagesCountPerUser() {
+        if (mAdapter == null)
+            return;
+
         AtomicBoolean playSound = new AtomicBoolean(false);
         AtomicInteger totalCount = new AtomicInteger(0);
         final int oldTotalCount = mAdapter.getTotalUnreadMessagesCount();
@@ -153,8 +157,9 @@ public class UsersListFragment extends Fragment {
                 if (this.isVisible()) {
                     getActivity().runOnUiThread(() -> {
                         mAdapter.notifyDataSetChanged();
-                        if (playSound.get() && totalCount.get() > oldTotalCount)
-                            MediaUtils.playNotificationSound(getContext());
+                        if (playSound.get() && totalCount.get() > oldTotalCount) {
+                            ((MainActivity)getActivity()).playNotificationSound();
+                        }
                     });
                 }
             } catch (Throwable t) {
@@ -163,12 +168,13 @@ public class UsersListFragment extends Fragment {
         });
     }
 
-    private void startPostmanDaemon() {
+    private synchronized void startPostmanDaemon() {
+        stopPostmanDaemon();
         postmanDaemon = new Thread(() -> {
             try {
                 while (!postmanDaemon.isInterrupted()) {
                     getUnreadMessagesCountPerUser();
-                    postmanDaemon.sleep(1000);
+                    postmanDaemon.sleep(5000);
                 }
             } catch (InterruptedException e) {
                 System.out.println(postmanDaemon.getName() + " is now exiting...");
@@ -178,7 +184,7 @@ public class UsersListFragment extends Fragment {
         postmanDaemon.start();
     }
 
-    public void stopPostmanDaemon() {
+    public synchronized void stopPostmanDaemon() {
         if (postmanDaemon != null)
             postmanDaemon.interrupt();
     }
@@ -192,7 +198,12 @@ public class UsersListFragment extends Fragment {
     @Override
     public void onResume() {
         super.onResume();
-        if (postmanDaemon != null && !postmanDaemon.isAlive())
-            startPostmanDaemon();
+        startPostmanDaemon();
+    }
+
+    @Override
+    public void onStop() {
+        super.onStop();
+        stopPostmanDaemon();
     }
 }

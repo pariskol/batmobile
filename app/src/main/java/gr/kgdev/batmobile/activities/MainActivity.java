@@ -1,6 +1,10 @@
 package gr.kgdev.batmobile.activities;
 
 import android.content.Intent;
+import android.media.AudioManager;
+import android.media.MediaPlayer;
+import android.media.RingtoneManager;
+import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.view.Menu;
@@ -15,6 +19,8 @@ import androidx.fragment.app.FragmentTransaction;
 
 import org.json.JSONException;
 
+import java.io.IOException;
+
 import gr.kgdev.batmobile.R;
 import gr.kgdev.batmobile.fragments.ChatFragment;
 import gr.kgdev.batmobile.fragments.UsersListFragment;
@@ -26,13 +32,37 @@ import gr.kgdev.batmobile.services.NotificationsService;
 public class MainActivity extends AppCompatActivity {
 
     private boolean twice = false;
-    private boolean notificationServiceRunning = false;
+    private MediaPlayer mediaPlayer;
 
 //    private BroadcastReceiver pong = new BroadcastReceiver(){
 //        public void onReceive (Context context, Intent intent) {
 //            serviceRunning = true;
 //        }
 //    };
+
+    public void initMediaPlayer() {
+        Uri defaultRingtoneUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION);
+
+        try {
+            mediaPlayer = new MediaPlayer();
+            mediaPlayer.setDataSource(this, defaultRingtoneUri);
+            mediaPlayer.setAudioStreamType(AudioManager.STREAM_NOTIFICATION);
+            mediaPlayer.prepare();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    public synchronized void playNotificationSound() {
+        if (mediaPlayer != null && !mediaPlayer.isPlaying()) {
+            try {
+                mediaPlayer.start();
+
+            } catch (Throwable e) {
+                e.printStackTrace();
+            }
+        }
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -44,7 +74,10 @@ public class MainActivity extends AppCompatActivity {
                     .commitNow();
         }
 
-        stopNotificationService();
+        NotificationsService.enableNotifications(false);
+        startNotificationService();
+        initMediaPlayer();
+//        stopNotificationService();
 
 //        LocalBroadcastManager.getInstance(this).registerReceiver(pong, new IntentFilter("pong"));
 //        LocalBroadcastManager.getInstance(this).sendBroadcastSync(new Intent("ping"));
@@ -55,7 +88,8 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void startNotificationService() {
-            startService(new Intent(this, NotificationsService.class));
+//        getApplicationContext().bindService(new Intent(getApplicationContext(),  NotificationsService.class), null, BIND_AUTO_CREATE);
+        startService(new Intent(this, NotificationsService.class));
     }
 
     public void stopNotificationService() {
@@ -66,21 +100,24 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onPause() {
         super.onPause();
-        startNotificationService();
+        NotificationsService.enableNotifications(true);
+//        startNotificationService();
 //        finish();
     }
 
     @Override
     protected void onStop() {
         super.onStop();
-        startNotificationService();
+        NotificationsService.enableNotifications(true);
+//        startNotificationService();
 //        finish();
     }
 
     @Override
     protected void onResume() {
         super.onResume();
-        stopNotificationService();
+        NotificationsService.enableNotifications(false);
+//        stopNotificationService();
     }
 
     @Override

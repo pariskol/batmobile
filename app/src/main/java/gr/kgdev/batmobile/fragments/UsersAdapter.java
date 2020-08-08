@@ -7,6 +7,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -34,7 +35,7 @@ public class UsersAdapter extends RecyclerView.Adapter<UsersAdapter.MyViewHolder
     // Provide a reference to the views for each data item
     // Complex data items may need more than one view per item, and
     // you provide access to all the views for a data item in a view holder
-    public static class MyViewHolder extends RecyclerView.ViewHolder {
+    public static class MyViewHolder extends RecyclerView.ViewHolder implements View.OnClickListener {
         // each data item is just a string in this case
         public RelativeLayout linearLayout;
 
@@ -42,13 +43,17 @@ public class UsersAdapter extends RecyclerView.Adapter<UsersAdapter.MyViewHolder
             super(v);
             linearLayout = v;
         }
+
+        @Override
+        public void onClick(View v) {
+            System.out.println("@@@@@@@@@@@ Clicked!");
+        }
     }
 
     // Provide a suitable constructor (depends on the kind of dataset)
     public UsersAdapter(ArrayList<User> myDataset, Activity activity) {
         this.usersDataset = myDataset;
         this.activity = activity instanceof MainActivity ? (MainActivity) activity : null ;
-
     }
 
     // Create new views (invoked by the layout manager)
@@ -58,7 +63,7 @@ public class UsersAdapter extends RecyclerView.Adapter<UsersAdapter.MyViewHolder
         // create a new view
         RelativeLayout v = (RelativeLayout) LayoutInflater.from(parent.getContext())
                 .inflate(R.layout.user_list_item, parent, false);
-//        ...
+
         MyViewHolder vh = new MyViewHolder(v);
         return vh;
     }
@@ -96,15 +101,20 @@ public class UsersAdapter extends RecyclerView.Adapter<UsersAdapter.MyViewHolder
         }
 
         ((ImageView) holder.linearLayout.findViewById(R.id.image)).setImageResource(R.drawable.batmobile);
+        holder.linearLayout.setOnClickListener(v -> loadChatFragment(user));
+    }
 
-        holder.linearLayout.setOnClickListener(v -> {
-            try {
-                activity.loadChatFragment(user);
-            } catch (JSONException e) {
-                e.printStackTrace();
-                activity.runOnUiThread(() -> Toast.makeText(activity, e.getMessage(), Toast.LENGTH_SHORT).show());
-            }
-        });
+    private void loadChatFragment(User user) {
+        try {
+            activity.loadChatFragment(user);
+        } catch (JSONException e) {
+            e.printStackTrace();
+            activity.runOnUiThread(() -> Toast.makeText(activity, e.getMessage(), Toast.LENGTH_SHORT).show());
+        }
+    }
+
+    public User getItem(int pos) {
+        return usersDataset.get(pos);
     }
 
     public void setNotificationsForUser(Integer userId, Integer num) {
