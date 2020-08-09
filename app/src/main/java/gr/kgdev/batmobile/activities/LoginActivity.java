@@ -58,14 +58,8 @@ public class LoginActivity extends AppCompatActivity {
                 User appUser = new User(json);
                 AppCache.setAppUser(appUser);
 
-                //TODO go to other acivity
-                try {
-                    Intent i = new Intent(this, MainActivity.class);
-                    startActivity(i);
-                } catch(Exception e) {
-                    e.printStackTrace();
-                }
-
+                Intent i = new Intent(this, MainActivity.class);
+                startActivity(i);
             } catch (Throwable e) {
                 e.printStackTrace();
                this.runOnUiThread(() -> Toast.makeText(this, "Failed to login!", Toast.LENGTH_SHORT).show());

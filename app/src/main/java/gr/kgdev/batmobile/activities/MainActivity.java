@@ -104,18 +104,21 @@ public class MainActivity extends AppCompatActivity {
     protected void onPause() {
         super.onPause();
         NotificationsService.enableNotifications(true);
+        //TODO set status inactive with request to api /logout ,use HTTPCLient class
     }
 
     @Override
     protected void onStop() {
         super.onStop();
         NotificationsService.enableNotifications(true);
+        //TODO set status inactive with request to api /logout ,use HTTPCLient class
     }
 
     @Override
     protected void onDestroy() {
         super.onDestroy();
         NotificationsService.enableNotifications(true);
+        //TODO set status inactive with request to api /logout ,use HTTPCLient class
     }
 
     @Override
@@ -123,6 +126,7 @@ public class MainActivity extends AppCompatActivity {
         super.onResume();
         NotificationsService.enableNotifications(false);
 //        startNotificationService();
+        //TODO set status active with request to api /login ,use HTTPCLient class
     }
 
     @Override

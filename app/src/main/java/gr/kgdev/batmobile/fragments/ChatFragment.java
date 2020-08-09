@@ -73,6 +73,7 @@ public class ChatFragment extends Fragment {
         return chatMessages;
     }
 
+    //TODO K.Vasalakis get messages based on last known message ID, sort new messages and add then to chatView
     private void getChatMessages(Boolean getAll) {
         AtomicBoolean playSound = new AtomicBoolean(false);
         HTTPClient.executeAsync(() -> {
@@ -93,6 +94,7 @@ public class ChatFragment extends Fragment {
                     setMessages(newChatMessages);
                     if (getActivity() != null) {
                         getActivity().runOnUiThread(() -> {
+                            //TODO do not clear list just add the new ones based on id
                             chatView.clearMessages();
                             chatView.addMessages(chatMessages);
                         });
