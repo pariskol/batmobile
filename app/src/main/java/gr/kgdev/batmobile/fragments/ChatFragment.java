@@ -24,6 +24,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import co.intentservice.chatui.ChatView;
 import co.intentservice.chatui.models.ChatMessage;
 import gr.kgdev.batmobile.R;
+import gr.kgdev.batmobile.activities.MainActivity;
 import gr.kgdev.batmobile.activities.MainViewModel;
 import gr.kgdev.batmobile.models.Message;
 import gr.kgdev.batmobile.models.User;
@@ -96,6 +97,8 @@ public class ChatFragment extends Fragment {
                             chatView.addMessages(chatMessages);
                         });
                     }
+                    if (playSound.get())
+                        ((MainActivity)getActivity()).playNotificationSound();
                 }
             } catch (Throwable t) {
                 t.printStackTrace();

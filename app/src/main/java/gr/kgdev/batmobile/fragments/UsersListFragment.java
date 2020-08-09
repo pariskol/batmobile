@@ -42,8 +42,9 @@ public class UsersListFragment extends Fragment {
 
     private static Thread postmanDaemon;
 
-    public static UsersListFragment newInstance() {
-        return new UsersListFragment();
+    public UsersListFragment () {
+        super();
+        //TODO update user status to active
     }
 
     @Nullable
