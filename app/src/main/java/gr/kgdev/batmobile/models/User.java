@@ -11,11 +11,19 @@ public class User {
 
     public User(JSONObject json) {
         try {
-            this.username = json.getString("NAME");
-            this.id = json.getInt("ID");
-            this.isActive = json.has("ACTIVE") ? json.getInt("ACTIVE") == 1 ? true : false : true;
+            this.username = json.getString("name");
+            this.id = json.getInt("id");
+            this.isActive = json.has("active") ? json.getInt("active") == 1 ? true : false : true;
         } catch (JSONException e) {
             e.printStackTrace();
+            try {
+                this.username = json.getString("NAME");
+                this.id = json.getInt("ID");
+                this.isActive = json.has("ACTIVE") ? json.getInt("ACTIVE") == 1 ? true : false : true;
+            } catch (JSONException ex) {
+                ex.printStackTrace();
+            }
+
         }
     }
 
