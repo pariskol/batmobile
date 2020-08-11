@@ -17,7 +17,6 @@ import java.util.Base64;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-@RequiresApi(api = Build.VERSION_CODES.O)
 public class HTTPClient {
 
     private static ExecutorService EXECUTOR_SERVICE = null;
@@ -76,6 +75,7 @@ public class HTTPClient {
         return response.body().string();
     }
 
+    @RequiresApi(api = Build.VERSION_CODES.O)
     public static void setBasicAuthCredentials(String username, String password) {
         String userCredentials = username + ":" + password;
         BASIC_AUTH = "Basic " + new String(Base64.getEncoder().encode(userCredentials.getBytes()));

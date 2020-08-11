@@ -59,6 +59,34 @@ public class ChatFragment extends Fragment {
         return inflater.inflate(R.layout.chat_fragment, container, false);
     }
 
+    @Override
+    public void onViewCreated(View view, @Nullable Bundle savedInstanceState) {
+        chatView = (ChatView) getView().findViewById(R.id.chat_view);
+        getChatMessages(true);
+        chatView.setOnSentMessageListener(chatMessage -> sendMessage(chatMessage));
+
+        startPostmanDaemon();
+    }
+
+    @Override
+    public void onActivityCreated(@Nullable Bundle savedInstanceState) {
+        super.onActivityCreated(savedInstanceState);
+        mViewModel = ViewModelProviders.of(this).get(MainViewModel.class);
+        // TODO: Use the ViewModel
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        startPostmanDaemon();
+    }
+
+    @Override
+    public void onStop() {
+        super.onStop();
+        stopPostmanDaemon();
+    }
+
     private ArrayList<ChatMessage> convertJsonToChatMessages(JSONArray messages) throws Exception {
         ArrayList<ChatMessage> chatMessages = new ArrayList<>();
         for (int i = 0; i < messages.length(); i++) {
@@ -90,7 +118,7 @@ public class ChatFragment extends Fragment {
                     newChatMessages.addAll(convertJsonToChatMessages(new JSONArray(HTTPClient.GET(url))));
                 }
 
-                if (newChatMessages.size() > 0 ) {
+                if (newChatMessages.size() > 0) {
                     setMessages(newChatMessages);
                     if (getActivity() != null) {
                         getActivity().runOnUiThread(() -> {
@@ -100,7 +128,7 @@ public class ChatFragment extends Fragment {
                         });
                     }
                     if (playSound.get())
-                        ((MainActivity)getActivity()).playNotificationSound();
+                        ((MainActivity) getActivity()).playNotificationSound();
                 }
             } catch (Throwable t) {
                 t.printStackTrace();
@@ -111,15 +139,6 @@ public class ChatFragment extends Fragment {
     private synchronized void setMessages(ArrayList<ChatMessage> newChatMessages) {
         chatMessages.addAll(newChatMessages);
         chatMessages.sort(Comparator.comparing(ChatMessage::getTimestamp));
-    }
-
-    @Override
-    public void onViewCreated(View view, @Nullable Bundle savedInstanceState) {
-        chatView = (ChatView) getView().findViewById(R.id.chat_view);
-        getChatMessages(true);
-        chatView.setOnSentMessageListener(chatMessage -> sendMessage(chatMessage));
-
-        startPostmanDaemon();
     }
 
     private synchronized void startPostmanDaemon() {
@@ -138,6 +157,11 @@ public class ChatFragment extends Fragment {
         postmanDaemon.start();
     }
 
+    private synchronized void stopPostmanDaemon() {
+        if (postmanDaemon != null)
+            postmanDaemon.interrupt();
+    }
+
     private boolean sendMessage(ChatMessage chatMessage) {
         HTTPClient.executeAsync(() -> {
             try {
@@ -150,7 +174,8 @@ public class ChatFragment extends Fragment {
                 getActivity().runOnUiThread(() -> {
 //                    chatMessages.add(chatMessage);
 //                    chatView.addMessage(chatMessage);
-                    chatView.getInputEditText().getText().clear();;
+                    chatView.getInputEditText().getText().clear();
+                    ;
                 });
             } catch (Throwable e) {
                 e.printStackTrace();
@@ -159,29 +184,5 @@ public class ChatFragment extends Fragment {
         });
         // we return false because message will be added to view if POST request executed successfully
         return false;
-    }
-
-    @Override
-    public void onActivityCreated(@Nullable Bundle savedInstanceState) {
-        super.onActivityCreated(savedInstanceState);
-        mViewModel = ViewModelProviders.of(this).get(MainViewModel.class);
-        // TODO: Use the ViewModel
-    }
-
-    @Override
-    public void onResume() {
-        super.onResume();
-        startPostmanDaemon();
-    }
-
-    private synchronized void stopPostmanDaemon() {
-        if (postmanDaemon != null)
-        postmanDaemon.interrupt();
-    }
-
-    @Override
-    public void onStop() {
-        super.onStop();
-        stopPostmanDaemon();
     }
 }

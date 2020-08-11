@@ -10,6 +10,7 @@ import android.content.IntentFilter;
 import android.os.Build;
 import android.os.IBinder;
 
+import androidx.annotation.RequiresApi;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
 import org.json.JSONArray;
@@ -48,6 +49,7 @@ public class NotificationsService extends Service {
 
     @Override
     public void onCreate() {
+        // register a broadcast receiver this is a hack to keep service alive
         broadcastReceiver = new ServiceEchoReceiver(this);
         LocalBroadcastManager
                 .getInstance(this)
@@ -85,6 +87,7 @@ public class NotificationsService extends Service {
             postmanDaemon.interrupt();
     }
 
+    @RequiresApi(api = Build.VERSION_CODES.O)
     private void getUnreadMessagesCount() {
         HTTPClient.executeAsync(() -> {
             try {

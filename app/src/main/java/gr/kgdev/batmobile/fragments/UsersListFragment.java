@@ -42,7 +42,7 @@ public class UsersListFragment extends Fragment {
 
     private static Thread postmanDaemon;
 
-    public UsersListFragment () {
+    public UsersListFragment() {
         super();
         //TODO update user status to active
     }
@@ -94,6 +94,32 @@ public class UsersListFragment extends Fragment {
         setAdapter();
     }
 
+    @Override
+    public void onActivityCreated(@Nullable Bundle savedInstanceState) {
+        super.onActivityCreated(savedInstanceState);
+        mViewModel = ViewModelProviders.of(this).get(MainViewModel.class);
+        // TODO: Use the ViewModel
+    }
+
+    @Override
+    public void onPause() {
+        super.onPause();
+        stopPostmanDaemon();
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        startPostmanDaemon();
+    }
+
+    @Override
+    public void onStop() {
+        super.onStop();
+        stopPostmanDaemon();
+    }
+
+
     private void setAdapter() {
         HTTPClient.executeAsync(() -> {
             try {
@@ -128,13 +154,6 @@ public class UsersListFragment extends Fragment {
         getActivity().runOnUiThread(() -> recyclerView.setAdapter(mAdapter));
     }
 
-    @Override
-    public void onActivityCreated(@Nullable Bundle savedInstanceState) {
-        super.onActivityCreated(savedInstanceState);
-        mViewModel = ViewModelProviders.of(this).get(MainViewModel.class);
-        // TODO: Use the ViewModel
-    }
-
     private void getUnreadMessagesCountPerUser() {
         if (mAdapter == null)
             return;
@@ -159,7 +178,7 @@ public class UsersListFragment extends Fragment {
                     getActivity().runOnUiThread(() -> {
                         mAdapter.notifyDataSetChanged();
                         if (playSound.get() && totalCount.get() > oldTotalCount) {
-                            ((MainActivity)getActivity()).playNotificationSound();
+                            ((MainActivity) getActivity()).playNotificationSound();
                         }
                     });
                 }
@@ -188,23 +207,5 @@ public class UsersListFragment extends Fragment {
     public synchronized void stopPostmanDaemon() {
         if (postmanDaemon != null)
             postmanDaemon.interrupt();
-    }
-
-    @Override
-    public void onPause() {
-        super.onPause();
-        stopPostmanDaemon();
-    }
-
-    @Override
-    public void onResume() {
-        super.onResume();
-        startPostmanDaemon();
-    }
-
-    @Override
-    public void onStop() {
-        super.onStop();
-        stopPostmanDaemon();
     }
 }
