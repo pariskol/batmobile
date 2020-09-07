@@ -3,6 +3,8 @@ package gr.kgdev.batmobile.models;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.util.Comparator;
+
 public class Message {
 
     private Integer id;
@@ -62,4 +64,15 @@ public class Message {
     public void setTimestamp(String timestamp) {
         this.timestamp = timestamp;
     }
+
+    public static Comparator<Message> messageComparator = (s1, s2) -> {
+        int message1 = s1.getId();
+        int message2 = s2.getId();
+
+        //ascending order
+        return message1-message2;
+
+        //descending order
+        //return StudentName2.compareTo(StudentName1);
+    };
 }

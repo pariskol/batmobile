@@ -59,7 +59,15 @@ public class ChatFragment extends Fragment {
         return inflater.inflate(R.layout.chat_fragment, container, false);
     }
 
-    private ArrayList<ChatMessage> convertJsonToChatMessages(JSONArray messages) throws Exception {
+    private ArrayList<Message> convertJsonToMessages(JSONArray message) throws Exception {
+        ArrayList<Message> messages = new ArrayList<>();
+        for (int i = 0; i < message.length(); i++) {
+            messages.add(new Message(message.getJSONObject(i)));
+        }
+        return messages;
+    }
+
+    private ArrayList<ChatMessage> convertMessagesToChatMessages(JSONArray messages) throws Exception { //edw 8elw n parw to arraylist, pros to paron den 3erw pws n parw ta methods apo to arraylist
         ArrayList<ChatMessage> chatMessages = new ArrayList<>();
         for (int i = 0; i < messages.length(); i++) {
             Message message = new Message(messages.getJSONObject(i));
@@ -78,20 +86,26 @@ public class ChatFragment extends Fragment {
         AtomicBoolean playSound = new AtomicBoolean(false);
         HTTPClient.executeAsync(() -> {
             try {
-                ArrayList<ChatMessage> newChatMessages = new ArrayList<>();
-                String url = HTTPClient.BASE_URL + "/get/messages?FROM_USER=" + contactUser.getId() + "&TO_USER=" + appUser.getId();
-                newChatMessages.addAll(convertJsonToChatMessages(new JSONArray(HTTPClient.GET(url))));
+                //ArrayList<ChatMessage> newChatMessages = new ArrayList<>();
+                ArrayList<Message> newMessages = new ArrayList<>();
+                String url = HTTPClient.BASE_URL + "/get/gayMessages?FROM_USER=" + contactUser.getId() + "&TO_USER=" + appUser.getId();
+                //newChatMessages.addAll(convertJsonToChatMessages(new JSONArray(HTTPClient.GET(url))));
+                newMessages.addAll(convertJsonToMessages(new JSONArray(HTTPClient.GET(url))));
                 // if new messages from other users fetched, prepare to play a notification sound
-                playSound.set(newChatMessages.size() > 0);
+                //playSound.set(newChatMessages.size() > 0);
+                playSound.set(newMessages.size() > 0);
 
                 //TODO use getAll value when server time is ok
                 if (true) {
-                    url = HTTPClient.BASE_URL + "/get/messages?FROM_USER=" + appUser.getId() + "&TO_USER=" + contactUser.getId();
-                    newChatMessages.addAll(convertJsonToChatMessages(new JSONArray(HTTPClient.GET(url))));
+                    url = HTTPClient.BASE_URL + "/get/gayMessages?FROM_USER=" + appUser.getId() + "&TO_USER=" + contactUser.getId();
+                    //newChatMessages.addAll(convertJsonToChatMessages(new JSONArray(HTTPClient.GET(url))));
+                    newMessages.addAll(convertJsonToMessages(new JSONArray(HTTPClient.GET(url))));
                 }
 
-                if (newChatMessages.size() > 0 ) {
-                    setMessages(newChatMessages);
+                //if (newChatMessages.size() > 0 ) {
+                if (newMessages.size() > 0 ) {
+                    //skeftomai n kanw to sort edw kai n kalesw thn convertMessagesToChatMessages
+                    //setMessages(newChatMessages);
                     if (getActivity() != null) {
                         getActivity().runOnUiThread(() -> {
                             //TODO do not clear list just add the new ones based on id
