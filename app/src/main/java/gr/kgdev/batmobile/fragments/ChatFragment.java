@@ -20,12 +20,14 @@ import org.json.JSONObject;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.stream.Collectors;
 
 import co.intentservice.chatui.ChatView;
 import co.intentservice.chatui.models.ChatMessage;
 import gr.kgdev.batmobile.R;
 import gr.kgdev.batmobile.activities.MainActivity;
 import gr.kgdev.batmobile.activities.MainViewModel;
+import gr.kgdev.batmobile.models.ChatMessageWithId;
 import gr.kgdev.batmobile.models.Message;
 import gr.kgdev.batmobile.models.User;
 import gr.kgdev.batmobile.utils.ConvertUtils;
@@ -44,6 +46,7 @@ public class ChatFragment extends Fragment {
     private User contactUser;
     private static Thread postmanDaemon;
     private ArrayList<Integer> allMessageIds;
+    private int lastMessageId = 0;
 
     public ChatFragment(User appUser, User contactUser) {
         this.appUser = appUser;
@@ -87,44 +90,46 @@ public class ChatFragment extends Fragment {
         stopPostmanDaemon();
     }
 
-    private ArrayList<ChatMessage> convertJsonToChatMessages(JSONArray messages) throws Exception {
-        ArrayList<ChatMessage> chatMessages = new ArrayList<>();
+    private ArrayList<ChatMessageWithId> convertJsonToChatMessages(JSONArray messages) throws Exception {
+        ArrayList<ChatMessageWithId> chatMessages = new ArrayList<>();
         for (int i = 0; i < messages.length(); i++) {
             Message message = new Message(messages.getJSONObject(i));
             if (!allMessageIds.contains(message.getId())) {
                 allMessageIds.add(message.getId());
                 long millis = ConvertUtils.convertToDate(message.getTimestamp()).getTime();
                 ChatMessage.Type type = message.getFromUserId() == appUser.getId() ? ChatMessage.Type.SENT : ChatMessage.Type.RECEIVED;
-                chatMessages.add(new ChatMessage(message.getMesasage(), millis, type));
+                chatMessages.add(new ChatMessageWithId(message.getId(), message.getMesasage(), millis, type));
             }
         }
         return chatMessages;
     }
 
-    //TODO K.Vasalakis get messages based on last known message ID, sort new messages and add then to chatView
     private void getChatMessages(Boolean getAll) {
         AtomicBoolean playSound = new AtomicBoolean(false);
         HTTPClient.executeAsync(() -> {
             try {
-                ArrayList<ChatMessage> newChatMessages = new ArrayList<>();
-                String url = HTTPClient.BASE_URL + "/get/messages?FROM_USER=" + contactUser.getId() + "&TO_USER=" + appUser.getId();
+                ArrayList<ChatMessageWithId> newChatMessages = new ArrayList<>();
+                ArrayList<String> newMessages = new ArrayList<>();
+                String url = HTTPClient.BASE_URL + "/get/messages?FROM_USER=" + contactUser.getId() + "&TO_USER=" + appUser.getId() + "&FROM_ID=" + lastMessageId;
                 newChatMessages.addAll(convertJsonToChatMessages(new JSONArray(HTTPClient.GET(url))));
                 // if new messages from other users fetched, prepare to play a notification sound
                 playSound.set(newChatMessages.size() > 0);
 
                 //TODO use getAll value when server time is ok
                 if (true) {
-                    url = HTTPClient.BASE_URL + "/get/messages?FROM_USER=" + appUser.getId() + "&TO_USER=" + contactUser.getId();
+                    url = HTTPClient.BASE_URL + "/get/messages?FROM_USER=" + appUser.getId() + "&TO_USER=" + contactUser.getId() + "&FROM_ID=" + lastMessageId;
                     newChatMessages.addAll(convertJsonToChatMessages(new JSONArray(HTTPClient.GET(url))));
                 }
 
                 if (newChatMessages.size() > 0) {
-                    setMessages(newChatMessages);
+//                    setMessages(newChatMessages);
+                    newChatMessages.sort(sortByChatMessageId());
+                    lastMessageId = chatMessages.size();
                     if (getActivity() != null) {
                         getActivity().runOnUiThread(() -> {
-                            //TODO do not clear list just add the new ones based on id
-                            chatView.clearMessages();
-                            chatView.addMessages(chatMessages);
+//                            chatView.clearMessages();
+                            // cast ArrayList<ChatMessageWithId> to ArrayList<ChatMessage>
+                            chatView.addMessages(new ArrayList<ChatMessage>(newChatMessages));
                         });
                     }
                     if (playSound.get())
@@ -136,9 +141,19 @@ public class ChatFragment extends Fragment {
         });
     }
 
-    private synchronized void setMessages(ArrayList<ChatMessage> newChatMessages) {
+    private synchronized void setMessages(ArrayList<ChatMessageWithId> newChatMessages) {
+        newChatMessages.sort(sortByChatMessageId());
         chatMessages.addAll(newChatMessages);
-        chatMessages.sort(Comparator.comparing(ChatMessage::getTimestamp));
+        lastMessageId = chatMessages.size();
+    }
+
+    private Comparator<ChatMessage> sortByChatMessageId() {
+        return (o1, o2) -> {
+            ChatMessageWithId m1 = (ChatMessageWithId) o1;
+            ChatMessageWithId m2 = (ChatMessageWithId) o2;
+
+            return m1.getId() - m2.getId();
+        };
     }
 
     private synchronized void startPostmanDaemon() {
