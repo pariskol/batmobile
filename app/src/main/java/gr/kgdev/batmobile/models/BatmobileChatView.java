@@ -24,8 +24,4 @@ public class BatmobileChatView extends ChatView {
         super(context, attrs, defStyleAttr, viewBuilder);
     }
 
-    @Override
-    public void addMessages(ArrayList<ChatMessage> messages) {
-        super.addMessages(messages);
-    }
 }

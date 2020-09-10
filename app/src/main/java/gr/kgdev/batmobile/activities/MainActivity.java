@@ -10,6 +10,7 @@ import android.media.RingtoneManager;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
@@ -34,6 +35,7 @@ import gr.kgdev.batmobile.services.NotificationsService;
 public class MainActivity extends AppCompatActivity {
 
     private MediaPlayer mediaPlayer;
+    private static final String TAG = MainActivity.class.getName();
 
     private BroadcastReceiver pong = new BroadcastReceiver(){
         public void onReceive (Context context, Intent intent) {
@@ -52,7 +54,7 @@ public class MainActivity extends AppCompatActivity {
             mediaPlayer.setAudioStreamType(AudioManager.STREAM_NOTIFICATION);
             mediaPlayer.prepare();
         } catch (Exception e) {
-            e.printStackTrace();
+            Log.e(TAG, e.getMessage(), e);
         }
     }
 
@@ -61,7 +63,7 @@ public class MainActivity extends AppCompatActivity {
             try {
                 mediaPlayer.start();
             } catch (Throwable e) {
-                e.printStackTrace();
+                Log.e(TAG, e.getMessage(), e);
             }
         }
     }

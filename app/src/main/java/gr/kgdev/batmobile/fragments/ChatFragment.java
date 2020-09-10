@@ -2,6 +2,7 @@ package gr.kgdev.batmobile.fragments;
 
 import android.os.Build;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -36,6 +37,7 @@ import gr.kgdev.batmobile.utils.HTTPClient;
 @RequiresApi(api = Build.VERSION_CODES.N)
 public class ChatFragment extends Fragment {
 
+    private static final String TAG = MainActivity.class.getName();
     private MainViewModel mViewModel;
     private RecyclerView recyclerView;
     private RecyclerView.Adapter mAdapter;
@@ -45,13 +47,11 @@ public class ChatFragment extends Fragment {
     private User appUser;
     private User contactUser;
     private static Thread postmanDaemon;
-    private ArrayList<Integer> allMessageIds;
     private int lastMessageId = 0;
 
     public ChatFragment(User appUser, User contactUser) {
         this.appUser = appUser;
         this.contactUser = contactUser;
-        allMessageIds = new ArrayList<>();
         chatMessages = new ArrayList<ChatMessage>();
     }
 
@@ -65,10 +65,7 @@ public class ChatFragment extends Fragment {
     @Override
     public void onViewCreated(View view, @Nullable Bundle savedInstanceState) {
         chatView = (ChatView) getView().findViewById(R.id.chat_view);
-        getChatMessages(true);
         chatView.setOnSentMessageListener(chatMessage -> sendMessage(chatMessage));
-
-        startPostmanDaemon();
     }
 
     @Override
@@ -94,57 +91,47 @@ public class ChatFragment extends Fragment {
         ArrayList<ChatMessageWithId> chatMessages = new ArrayList<>();
         for (int i = 0; i < messages.length(); i++) {
             Message message = new Message(messages.getJSONObject(i));
-            if (!allMessageIds.contains(message.getId())) {
-                allMessageIds.add(message.getId());
-                long millis = ConvertUtils.convertToDate(message.getTimestamp()).getTime();
-                ChatMessage.Type type = message.getFromUserId() == appUser.getId() ? ChatMessage.Type.SENT : ChatMessage.Type.RECEIVED;
-                chatMessages.add(new ChatMessageWithId(message.getId(), message.getMesasage(), millis, type));
-            }
+            long millis = ConvertUtils.convertToDate(message.getTimestamp()).getTime();
+            ChatMessage.Type type = message.getFromUserId() == appUser.getId() ? ChatMessage.Type.SENT : ChatMessage.Type.RECEIVED;
+            chatMessages.add(new ChatMessageWithId(message.getId(), message.getMesasage(), millis, type));
         }
         return chatMessages;
     }
 
     private void getChatMessages(Boolean getAll) {
-        AtomicBoolean playSound = new AtomicBoolean(false);
-        HTTPClient.executeAsync(() -> {
-            try {
-                ArrayList<ChatMessageWithId> newChatMessages = new ArrayList<>();
-                ArrayList<String> newMessages = new ArrayList<>();
-                String url = HTTPClient.BASE_URL + "/get/messages?FROM_USER=" + contactUser.getId() + "&TO_USER=" + appUser.getId() + "&FROM_ID=" + lastMessageId;
-                newChatMessages.addAll(convertJsonToChatMessages(new JSONArray(HTTPClient.GET(url))));
-                // if new messages from other users fetched, prepare to play a notification sound
-                playSound.set(newChatMessages.size() > 0);
+        boolean playSound = false;
+        try {
+            ArrayList<ChatMessageWithId> newChatMessages = new ArrayList<>();
+            String url = HTTPClient.BASE_URL + "/get/messages?FROM_USER=" + contactUser.getId() + "&TO_USER=" + appUser.getId() + "&FROM_ID=" + lastMessageId;
+            newChatMessages.addAll(convertJsonToChatMessages(new JSONArray(HTTPClient.GET(url))));
+            // if new messages from other users fetched, prepare to play a notification sound
+            playSound = newChatMessages.size() > 0;
 
-                //TODO use getAll value when server time is ok
-                if (true) {
-                    url = HTTPClient.BASE_URL + "/get/messages?FROM_USER=" + appUser.getId() + "&TO_USER=" + contactUser.getId() + "&FROM_ID=" + lastMessageId;
-                    newChatMessages.addAll(convertJsonToChatMessages(new JSONArray(HTTPClient.GET(url))));
-                }
+            url = HTTPClient.BASE_URL + "/get/messages?FROM_USER=" + appUser.getId() + "&TO_USER=" + contactUser.getId() + "&FROM_ID=" + lastMessageId;
+            newChatMessages.addAll(convertJsonToChatMessages(new JSONArray(HTTPClient.GET(url))));
 
-                if (newChatMessages.size() > 0) {
-//                    setMessages(newChatMessages);
-                    newChatMessages.sort(sortByChatMessageId());
-                    lastMessageId = chatMessages.size();
-                    if (getActivity() != null) {
-                        getActivity().runOnUiThread(() -> {
-//                            chatView.clearMessages();
-                            // cast ArrayList<ChatMessageWithId> to ArrayList<ChatMessage>
-                            chatView.addMessages(new ArrayList<ChatMessage>(newChatMessages));
-                        });
-                    }
-                    if (playSound.get())
-                        ((MainActivity) getActivity()).playNotificationSound();
+            if (newChatMessages.size() > 0) {
+                    setMessages(newChatMessages);
+
+                if (getActivity() != null) {
+                    getActivity().runOnUiThread(() -> {
+                        // cast ArrayList<ChatMessageWithId> to ArrayList<ChatMessage>
+                        chatView.addMessages(new ArrayList<ChatMessage>(newChatMessages));
+                    });
                 }
-            } catch (Throwable t) {
-                t.printStackTrace();
+                if (playSound)
+                    ((MainActivity) getActivity()).playNotificationSound();
             }
-        });
+        } catch (Throwable e) {
+            Log.e(TAG, e.getMessage(), e);
+        }
     }
 
     private synchronized void setMessages(ArrayList<ChatMessageWithId> newChatMessages) {
         newChatMessages.sort(sortByChatMessageId());
         chatMessages.addAll(newChatMessages);
-        lastMessageId = chatMessages.size();
+        ChatMessage lastChatMessage = chatMessages.get(chatMessages.size() - 1);
+        lastMessageId = ((ChatMessageWithId) lastChatMessage).getId();
     }
 
     private Comparator<ChatMessage> sortByChatMessageId() {
@@ -165,7 +152,7 @@ public class ChatFragment extends Fragment {
                     postmanDaemon.sleep(1000);
                 }
             } catch (InterruptedException e) {
-                System.out.println(postmanDaemon.getName() + " is now exiting...");
+                Log.i(TAG, postmanDaemon.getName() + " is now exiting...");
             }
         }, ChatFragment.class.getSimpleName() + ": Postman Daemon");
         postmanDaemon.setDaemon(true);
@@ -193,7 +180,7 @@ public class ChatFragment extends Fragment {
                     ;
                 });
             } catch (Throwable e) {
-                e.printStackTrace();
+                Log.e(TAG, e.getMessage(), e);
                 getActivity().runOnUiThread(() -> Toast.makeText(getActivity(), e.getMessage(), Toast.LENGTH_SHORT).show());
             }
         });

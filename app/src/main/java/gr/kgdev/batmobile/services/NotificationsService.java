@@ -9,6 +9,7 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.Build;
 import android.os.IBinder;
+import android.util.Log;
 
 import androidx.annotation.RequiresApi;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
@@ -20,11 +21,13 @@ import gr.kgdev.batmobile.activities.MainActivity;
 import gr.kgdev.batmobile.utils.AppCache;
 import gr.kgdev.batmobile.utils.HTTPClient;
 
+@RequiresApi(api = Build.VERSION_CODES.O)
 public class NotificationsService extends Service {
     private ServiceEchoReceiver broadcastReceiver;
     Thread postmanDaemon;
     private static int PREVIOUS_COUNT = 0;
     private static boolean ENABLE_DAEMON = true;
+    private static String TAG = NotificationsService.class.getName();
 
     public NotificationsService() {
     }
@@ -36,7 +39,7 @@ public class NotificationsService extends Service {
 
     @Override
     public IBinder onBind(Intent intent) {
-        System.out.println("Notifications Service started");
+        Log.i(TAG, "Notifications Service started");
         // TODO: Return the communication channel to the service.
         throw new UnsupportedOperationException("Not yet implemented");
     }
@@ -66,6 +69,7 @@ public class NotificationsService extends Service {
         stopPostmanDaemon();
     }
 
+    @RequiresApi(api = Build.VERSION_CODES.O)
     private void startPostmanDaemon() {
         postmanDaemon = new Thread(() -> {
             try {
@@ -75,7 +79,7 @@ public class NotificationsService extends Service {
                     postmanDaemon.sleep(5000);
                 }
             } catch (InterruptedException e) {
-                System.out.println(postmanDaemon.getName() + " is now exiting...");
+                Log.i(TAG,postmanDaemon.getName() + " is now exiting...");
             }
         }, getClass().getSimpleName() + ": Postman Daemon");
         postmanDaemon.setDaemon(true);
@@ -87,7 +91,6 @@ public class NotificationsService extends Service {
             postmanDaemon.interrupt();
     }
 
-    @RequiresApi(api = Build.VERSION_CODES.O)
     private void getUnreadMessagesCount() {
         HTTPClient.executeAsync(() -> {
             try {
@@ -103,7 +106,7 @@ public class NotificationsService extends Service {
                 PREVIOUS_COUNT = count;
 
             } catch (Throwable t) {
-                t.printStackTrace();
+                Log.e(TAG, t.getMessage(), t);
             }
         });
     }

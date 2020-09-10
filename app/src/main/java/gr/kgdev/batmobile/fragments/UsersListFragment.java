@@ -2,6 +2,7 @@ package gr.kgdev.batmobile.fragments;
 
 import android.os.Build;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -33,6 +34,7 @@ import gr.kgdev.batmobile.utils.HTTPClient;
 @RequiresApi(api = Build.VERSION_CODES.N)
 public class UsersListFragment extends Fragment {
 
+    private static final String TAG = MainActivity.class.getName();
     private MainViewModel mViewModel;
     private RecyclerView recyclerView;
     private UsersAdapter mAdapter;
@@ -134,7 +136,7 @@ public class UsersListFragment extends Fragment {
                 startPostmanDaemon();
                 getActivity().runOnUiThread(() -> recyclerView.setAdapter(mAdapter));
             } catch (Throwable e) {
-                e.printStackTrace();
+                Log.e(TAG, e.getMessage(), e);
             }
 
         });
@@ -182,8 +184,8 @@ public class UsersListFragment extends Fragment {
                         }
                     });
                 }
-            } catch (Throwable t) {
-                t.printStackTrace();
+            } catch (Throwable e) {
+                Log.e(TAG, e.getMessage(), e);
             }
         });
     }
@@ -197,7 +199,7 @@ public class UsersListFragment extends Fragment {
                     postmanDaemon.sleep(5000);
                 }
             } catch (InterruptedException e) {
-                System.out.println(postmanDaemon.getName() + " is now exiting...");
+                Log.i(TAG, postmanDaemon.getName() + " is now exiting...");
             }
         }, UsersListFragment.class.getSimpleName() + ": Postman Daemon");
         postmanDaemon.setDaemon(true);
