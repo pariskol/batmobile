@@ -20,8 +20,6 @@ import org.json.JSONObject;
 
 import java.util.ArrayList;
 import java.util.Comparator;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.stream.Collectors;
 
 import co.intentservice.chatui.ChatView;
 import co.intentservice.chatui.models.ChatMessage;
@@ -111,14 +109,12 @@ public class ChatFragment extends Fragment {
             newChatMessages.addAll(convertJsonToChatMessages(new JSONArray(HTTPClient.GET(url))));
 
             if (newChatMessages.size() > 0) {
-                    setMessages(newChatMessages);
+                    sortAndSetMessages(newChatMessages);
 
-                if (getActivity() != null) {
-                    getActivity().runOnUiThread(() -> {
-                        // cast ArrayList<ChatMessageWithId> to ArrayList<ChatMessage>
-                        chatView.addMessages(new ArrayList<ChatMessage>(newChatMessages));
-                    });
-                }
+                // cast ArrayList<ChatMessageWithId> to ArrayList<ChatMessage>
+                if (getActivity() != null)
+                    getActivity().runOnUiThread(() -> chatView.addMessages(new ArrayList<ChatMessage>(newChatMessages)));
+
                 if (playSound)
                     ((MainActivity) getActivity()).playNotificationSound();
             }
@@ -127,7 +123,7 @@ public class ChatFragment extends Fragment {
         }
     }
 
-    private synchronized void setMessages(ArrayList<ChatMessageWithId> newChatMessages) {
+    private synchronized void sortAndSetMessages(ArrayList<ChatMessageWithId> newChatMessages) {
         newChatMessages.sort(sortByChatMessageId());
         chatMessages.addAll(newChatMessages);
         ChatMessage lastChatMessage = chatMessages.get(chatMessages.size() - 1);
