@@ -15,7 +15,6 @@ public class ConvertUtils {
     public static Date convertToDate(String str) throws ParseException {
         SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
         Date date = format.parse(str);
-        System.out.println(date);
         return date;
     }
 }

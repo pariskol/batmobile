@@ -2,6 +2,7 @@ package gr.kgdev.batmobile.fragments;
 
 import android.os.Build;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -19,13 +20,13 @@ import org.json.JSONObject;
 
 import java.util.ArrayList;
 import java.util.Comparator;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 import co.intentservice.chatui.ChatView;
 import co.intentservice.chatui.models.ChatMessage;
 import gr.kgdev.batmobile.R;
 import gr.kgdev.batmobile.activities.MainActivity;
 import gr.kgdev.batmobile.activities.MainViewModel;
+import gr.kgdev.batmobile.models.ChatMessageWithId;
 import gr.kgdev.batmobile.models.Message;
 import gr.kgdev.batmobile.models.User;
 import gr.kgdev.batmobile.utils.ConvertUtils;
@@ -34,6 +35,7 @@ import gr.kgdev.batmobile.utils.HTTPClient;
 @RequiresApi(api = Build.VERSION_CODES.N)
 public class ChatFragment extends Fragment {
 
+    private static final String TAG = MainActivity.class.getName();
     private MainViewModel mViewModel;
     private RecyclerView recyclerView;
     private RecyclerView.Adapter mAdapter;
@@ -43,12 +45,11 @@ public class ChatFragment extends Fragment {
     private User appUser;
     private User contactUser;
     private static Thread postmanDaemon;
-    private ArrayList<Integer> allMessageIds;
+    private int lastMessageId = 0;
 
     public ChatFragment(User appUser, User contactUser) {
         this.appUser = appUser;
         this.contactUser = contactUser;
-        allMessageIds = new ArrayList<>();
         chatMessages = new ArrayList<ChatMessage>();
     }
 
@@ -59,120 +60,10 @@ public class ChatFragment extends Fragment {
         return inflater.inflate(R.layout.chat_fragment, container, false);
     }
 
-    private ArrayList<Message> convertJsonToMessages(JSONArray message) throws Exception {
-        ArrayList<Message> messages = new ArrayList<>();
-        for (int i = 0; i < message.length(); i++) {
-            messages.add(new Message(message.getJSONObject(i)));
-        }
-        return messages;
-    }
-
-    private ArrayList<ChatMessage> convertMessagesToChatMessages(JSONArray messages) throws Exception { //edw 8elw n parw to arraylist, pros to paron den 3erw pws n parw ta methods apo to arraylist
-        ArrayList<ChatMessage> chatMessages = new ArrayList<>();
-        for (int i = 0; i < messages.length(); i++) {
-            Message message = new Message(messages.getJSONObject(i));
-            if (!allMessageIds.contains(message.getId())) {
-                allMessageIds.add(message.getId());
-                long millis = ConvertUtils.convertToDate(message.getTimestamp()).getTime();
-                ChatMessage.Type type = message.getFromUserId() == appUser.getId() ? ChatMessage.Type.SENT : ChatMessage.Type.RECEIVED;
-                chatMessages.add(new ChatMessage(message.getMesasage(), millis, type));
-            }
-        }
-        return chatMessages;
-    }
-
-    //TODO K.Vasalakis get messages based on last known message ID, sort new messages and add then to chatView
-    private void getChatMessages(Boolean getAll) {
-        AtomicBoolean playSound = new AtomicBoolean(false);
-        HTTPClient.executeAsync(() -> {
-            try {
-                //ArrayList<ChatMessage> newChatMessages = new ArrayList<>();
-                ArrayList<Message> newMessages = new ArrayList<>();
-                String url = HTTPClient.BASE_URL + "/get/gayMessages?FROM_USER=" + contactUser.getId() + "&TO_USER=" + appUser.getId();
-                //newChatMessages.addAll(convertJsonToChatMessages(new JSONArray(HTTPClient.GET(url))));
-                newMessages.addAll(convertJsonToMessages(new JSONArray(HTTPClient.GET(url))));
-                // if new messages from other users fetched, prepare to play a notification sound
-                //playSound.set(newChatMessages.size() > 0);
-                playSound.set(newMessages.size() > 0);
-
-                //TODO use getAll value when server time is ok
-                if (true) {
-                    url = HTTPClient.BASE_URL + "/get/gayMessages?FROM_USER=" + appUser.getId() + "&TO_USER=" + contactUser.getId();
-                    //newChatMessages.addAll(convertJsonToChatMessages(new JSONArray(HTTPClient.GET(url))));
-                    newMessages.addAll(convertJsonToMessages(new JSONArray(HTTPClient.GET(url))));
-                }
-
-                //if (newChatMessages.size() > 0 ) {
-                if (newMessages.size() > 0 ) {
-                    //skeftomai n kanw to sort edw kai n kalesw thn convertMessagesToChatMessages
-                    //setMessages(newChatMessages);
-                    if (getActivity() != null) {
-                        getActivity().runOnUiThread(() -> {
-                            //TODO do not clear list just add the new ones based on id
-                            chatView.clearMessages();
-                            chatView.addMessages(chatMessages);
-                        });
-                    }
-                    if (playSound.get())
-                        ((MainActivity)getActivity()).playNotificationSound();
-                }
-            } catch (Throwable t) {
-                t.printStackTrace();
-            }
-        });
-    }
-
-    private synchronized void setMessages(ArrayList<ChatMessage> newChatMessages) {
-        chatMessages.addAll(newChatMessages);
-        chatMessages.sort(Comparator.comparing(ChatMessage::getTimestamp));
-    }
-
     @Override
     public void onViewCreated(View view, @Nullable Bundle savedInstanceState) {
         chatView = (ChatView) getView().findViewById(R.id.chat_view);
-        getChatMessages(true);
         chatView.setOnSentMessageListener(chatMessage -> sendMessage(chatMessage));
-
-        startPostmanDaemon();
-    }
-
-    private synchronized void startPostmanDaemon() {
-        stopPostmanDaemon();
-        postmanDaemon = new Thread(() -> {
-            try {
-                while (!postmanDaemon.isInterrupted()) {
-                    getChatMessages(false);
-                    postmanDaemon.sleep(1000);
-                }
-            } catch (InterruptedException e) {
-                System.out.println(postmanDaemon.getName() + " is now exiting...");
-            }
-        }, ChatFragment.class.getSimpleName() + ": Postman Daemon");
-        postmanDaemon.setDaemon(true);
-        postmanDaemon.start();
-    }
-
-    private boolean sendMessage(ChatMessage chatMessage) {
-        HTTPClient.executeAsync(() -> {
-            try {
-                JSONObject json = new JSONObject();
-                json.put("MESSAGE", chatMessage.getMessage());
-                json.put("FROM_USER", appUser.getId());
-                json.put("TO_USER", contactUser.getId());
-                HTTPClient.POST(HTTPClient.BASE_URL + "/post/message", json);
-                // here we add the message to view
-                getActivity().runOnUiThread(() -> {
-//                    chatMessages.add(chatMessage);
-//                    chatView.addMessage(chatMessage);
-                    chatView.getInputEditText().getText().clear();;
-                });
-            } catch (Throwable e) {
-                e.printStackTrace();
-                getActivity().runOnUiThread(() -> Toast.makeText(getActivity(), e.getMessage(), Toast.LENGTH_SHORT).show());
-            }
-        });
-        // we return false because message will be added to view if POST request executed successfully
-        return false;
     }
 
     @Override
@@ -188,14 +79,108 @@ public class ChatFragment extends Fragment {
         startPostmanDaemon();
     }
 
-    private synchronized void stopPostmanDaemon() {
-        if (postmanDaemon != null)
-        postmanDaemon.interrupt();
-    }
-
     @Override
     public void onStop() {
         super.onStop();
         stopPostmanDaemon();
+    }
+
+    private ArrayList<ChatMessageWithId> convertJsonToChatMessages(JSONArray messages) throws Exception {
+        ArrayList<ChatMessageWithId> chatMessages = new ArrayList<>();
+        for (int i = 0; i < messages.length(); i++) {
+            Message message = new Message(messages.getJSONObject(i));
+            long millis = ConvertUtils.convertToDate(message.getTimestamp()).getTime();
+            ChatMessage.Type type = message.getFromUserId() == appUser.getId() ? ChatMessage.Type.SENT : ChatMessage.Type.RECEIVED;
+            chatMessages.add(new ChatMessageWithId(message.getId(), message.getMesasage(), millis, type));
+        }
+        return chatMessages;
+    }
+
+    private void getChatMessages(Boolean getAll) {
+        boolean playSound = false;
+        try {
+            ArrayList<ChatMessageWithId> newChatMessages = new ArrayList<>();
+            String url = HTTPClient.BASE_URL + "/get/messages?FROM_USER=" + contactUser.getId() + "&TO_USER=" + appUser.getId() + "&FROM_ID=" + lastMessageId;
+            newChatMessages.addAll(convertJsonToChatMessages(new JSONArray(HTTPClient.GET(url))));
+            // if new messages from other users fetched, prepare to play a notification sound
+            playSound = newChatMessages.size() > 0;
+
+            url = HTTPClient.BASE_URL + "/get/messages?FROM_USER=" + appUser.getId() + "&TO_USER=" + contactUser.getId() + "&FROM_ID=" + lastMessageId;
+            newChatMessages.addAll(convertJsonToChatMessages(new JSONArray(HTTPClient.GET(url))));
+
+            if (newChatMessages.size() > 0) {
+                    sortAndSetMessages(newChatMessages);
+
+                // cast ArrayList<ChatMessageWithId> to ArrayList<ChatMessage>
+                if (getActivity() != null)
+                    getActivity().runOnUiThread(() -> chatView.addMessages(new ArrayList<ChatMessage>(newChatMessages)));
+
+                if (playSound)
+                    ((MainActivity) getActivity()).playNotificationSound();
+            }
+        } catch (Throwable e) {
+            Log.e(TAG, e.getMessage(), e);
+        }
+    }
+
+    private synchronized void sortAndSetMessages(ArrayList<ChatMessageWithId> newChatMessages) {
+        newChatMessages.sort(sortByChatMessageId());
+        chatMessages.addAll(newChatMessages);
+        ChatMessage lastChatMessage = chatMessages.get(chatMessages.size() - 1);
+        lastMessageId = ((ChatMessageWithId) lastChatMessage).getId();
+    }
+
+    private Comparator<ChatMessage> sortByChatMessageId() {
+        return (o1, o2) -> {
+            ChatMessageWithId m1 = (ChatMessageWithId) o1;
+            ChatMessageWithId m2 = (ChatMessageWithId) o2;
+
+            return m1.getId() - m2.getId();
+        };
+    }
+
+    private synchronized void startPostmanDaemon() {
+        stopPostmanDaemon();
+        postmanDaemon = new Thread(() -> {
+            try {
+                while (!postmanDaemon.isInterrupted()) {
+                    getChatMessages(false);
+                    postmanDaemon.sleep(1000);
+                }
+            } catch (InterruptedException e) {
+                Log.i(TAG, postmanDaemon.getName() + " is now exiting...");
+            }
+        }, ChatFragment.class.getSimpleName() + ": Postman Daemon");
+        postmanDaemon.setDaemon(true);
+        postmanDaemon.start();
+    }
+
+    private synchronized void stopPostmanDaemon() {
+        if (postmanDaemon != null)
+            postmanDaemon.interrupt();
+    }
+
+    private boolean sendMessage(ChatMessage chatMessage) {
+        HTTPClient.executeAsync(() -> {
+            try {
+                JSONObject json = new JSONObject();
+                json.put("MESSAGE", chatMessage.getMessage());
+                json.put("FROM_USER", appUser.getId());
+                json.put("TO_USER", contactUser.getId());
+                HTTPClient.POST(HTTPClient.BASE_URL + "/post/message", json);
+                // here we add the message to view
+                getActivity().runOnUiThread(() -> {
+//                    chatMessages.add(chatMessage);
+//                    chatView.addMessage(chatMessage);
+                    chatView.getInputEditText().getText().clear();
+                    ;
+                });
+            } catch (Throwable e) {
+                Log.e(TAG, e.getMessage(), e);
+                getActivity().runOnUiThread(() -> Toast.makeText(getActivity(), e.getMessage(), Toast.LENGTH_SHORT).show());
+            }
+        });
+        // we return false because message will be added to view if POST request executed successfully
+        return false;
     }
 }

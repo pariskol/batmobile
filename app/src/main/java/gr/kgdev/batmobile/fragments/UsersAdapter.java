@@ -3,6 +3,7 @@ package gr.kgdev.batmobile.fragments;
 import android.app.Activity;
 import android.graphics.Color;
 import android.os.Build;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -31,6 +32,7 @@ public class UsersAdapter extends RecyclerView.Adapter<UsersAdapter.MyViewHolder
     private List<User> usersDataset;
     private HashMap<Integer, Integer> notificationsMap = new HashMap<>();
     private MyViewHolder viewHolder ;
+    private static final String TAG = UsersAdapter.class.getName();
 
     // Provide a reference to the views for each data item
     // Complex data items may need more than one view per item, and
@@ -108,7 +110,7 @@ public class UsersAdapter extends RecyclerView.Adapter<UsersAdapter.MyViewHolder
         try {
             activity.loadChatFragment(user);
         } catch (JSONException e) {
-            e.printStackTrace();
+            Log.e(TAG, e.getMessage(), e);
             activity.runOnUiThread(() -> Toast.makeText(activity, e.getMessage(), Toast.LENGTH_SHORT).show());
         }
     }

@@ -1,5 +1,7 @@
 package gr.kgdev.batmobile.models;
 
+import android.util.Log;
+
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -15,13 +17,12 @@ public class User {
             this.id = json.getInt("id");
             this.isActive = json.has("active") ? json.getInt("active") == 1 ? true : false : true;
         } catch (JSONException e) {
-            e.printStackTrace();
             try {
                 this.username = json.getString("NAME");
                 this.id = json.getInt("ID");
                 this.isActive = json.has("ACTIVE") ? json.getInt("ACTIVE") == 1 ? true : false : true;
             } catch (JSONException ex) {
-                ex.printStackTrace();
+                Log.e(getClass().getName(), "Could not deserilize json");
             }
 
         }

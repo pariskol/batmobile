@@ -10,6 +10,7 @@ import android.media.RingtoneManager;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
@@ -23,8 +24,6 @@ import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
 import org.json.JSONException;
 
-import java.io.IOException;
-
 import gr.kgdev.batmobile.R;
 import gr.kgdev.batmobile.fragments.ChatFragment;
 import gr.kgdev.batmobile.fragments.UsersListFragment;
@@ -36,14 +35,15 @@ import gr.kgdev.batmobile.services.NotificationsService;
 public class MainActivity extends AppCompatActivity {
 
     private MediaPlayer mediaPlayer;
+    private static final String TAG = MainActivity.class.getName();
 
     private BroadcastReceiver pong = new BroadcastReceiver(){
         public void onReceive (Context context, Intent intent) {
-            serviceRunning = true;
+            notificationServiceRunning = true;
         }
     };
 
-    private boolean serviceRunning = false;
+    private boolean notificationServiceRunning = false;
 
     public void initMediaPlayer() {
         Uri defaultRingtoneUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION);
@@ -54,7 +54,7 @@ public class MainActivity extends AppCompatActivity {
             mediaPlayer.setAudioStreamType(AudioManager.STREAM_NOTIFICATION);
             mediaPlayer.prepare();
         } catch (Exception e) {
-            e.printStackTrace();
+            Log.e(TAG, e.getMessage(), e);
         }
     }
 
@@ -62,11 +62,18 @@ public class MainActivity extends AppCompatActivity {
         if (mediaPlayer != null && !mediaPlayer.isPlaying()) {
             try {
                 mediaPlayer.start();
-
             } catch (Throwable e) {
-                e.printStackTrace();
+                Log.e(TAG, e.getMessage(), e);
             }
         }
+    }
+
+    public void startNotificationService() {
+        startService(new Intent(this, NotificationsService.class));
+    }
+
+    public void stopNotificationService() {
+        stopService(new Intent(this, NotificationsService.class));
     }
 
     @Override
@@ -83,21 +90,13 @@ public class MainActivity extends AppCompatActivity {
         startNotificationService();
         initMediaPlayer();
 
+        // keep service alive
         LocalBroadcastManager.getInstance(this).registerReceiver(pong, new IntentFilter("pong"));
         LocalBroadcastManager.getInstance(this).sendBroadcastSync(new Intent("ping"));
 
-        if(!serviceRunning){
+        if(!notificationServiceRunning){
             startNotificationService();
         }
-    }
-
-    public void startNotificationService() {
-//        getApplicationContext().bindService(new Intent(getApplicationContext(),  NotificationsService.class), null, BIND_AUTO_CREATE);
-        startService(new Intent(this, NotificationsService.class));
-    }
-
-    public void stopNotificationService() {
-            stopService(new Intent(this, NotificationsService.class));
     }
 
     @Override
@@ -125,7 +124,6 @@ public class MainActivity extends AppCompatActivity {
     protected void onResume() {
         super.onResume();
         NotificationsService.enableNotifications(false);
-//        startNotificationService();
         //TODO set status active with request to api /login ,use HTTPCLient class
     }
 

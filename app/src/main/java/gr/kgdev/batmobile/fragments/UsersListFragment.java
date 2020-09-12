@@ -2,6 +2,7 @@ package gr.kgdev.batmobile.fragments;
 
 import android.os.Build;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -33,6 +34,7 @@ import gr.kgdev.batmobile.utils.HTTPClient;
 @RequiresApi(api = Build.VERSION_CODES.N)
 public class UsersListFragment extends Fragment {
 
+    private static final String TAG = MainActivity.class.getName();
     private MainViewModel mViewModel;
     private RecyclerView recyclerView;
     private UsersAdapter mAdapter;
@@ -42,7 +44,7 @@ public class UsersListFragment extends Fragment {
 
     private static Thread postmanDaemon;
 
-    public UsersListFragment () {
+    public UsersListFragment() {
         super();
         //TODO update user status to active
     }
@@ -94,6 +96,32 @@ public class UsersListFragment extends Fragment {
         setAdapter();
     }
 
+    @Override
+    public void onActivityCreated(@Nullable Bundle savedInstanceState) {
+        super.onActivityCreated(savedInstanceState);
+        mViewModel = ViewModelProviders.of(this).get(MainViewModel.class);
+        // TODO: Use the ViewModel
+    }
+
+    @Override
+    public void onPause() {
+        super.onPause();
+        stopPostmanDaemon();
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        startPostmanDaemon();
+    }
+
+    @Override
+    public void onStop() {
+        super.onStop();
+        stopPostmanDaemon();
+    }
+
+
     private void setAdapter() {
         HTTPClient.executeAsync(() -> {
             try {
@@ -108,7 +136,7 @@ public class UsersListFragment extends Fragment {
                 startPostmanDaemon();
                 getActivity().runOnUiThread(() -> recyclerView.setAdapter(mAdapter));
             } catch (Throwable e) {
-                e.printStackTrace();
+                Log.e(TAG, e.getMessage(), e);
             }
 
         });
@@ -126,13 +154,6 @@ public class UsersListFragment extends Fragment {
         }
         mAdapter = new UsersAdapter((ArrayList<User>) filteredUsers, getActivity());
         getActivity().runOnUiThread(() -> recyclerView.setAdapter(mAdapter));
-    }
-
-    @Override
-    public void onActivityCreated(@Nullable Bundle savedInstanceState) {
-        super.onActivityCreated(savedInstanceState);
-        mViewModel = ViewModelProviders.of(this).get(MainViewModel.class);
-        // TODO: Use the ViewModel
     }
 
     private void getUnreadMessagesCountPerUser() {
@@ -159,12 +180,12 @@ public class UsersListFragment extends Fragment {
                     getActivity().runOnUiThread(() -> {
                         mAdapter.notifyDataSetChanged();
                         if (playSound.get() && totalCount.get() > oldTotalCount) {
-                            ((MainActivity)getActivity()).playNotificationSound();
+                            ((MainActivity) getActivity()).playNotificationSound();
                         }
                     });
                 }
-            } catch (Throwable t) {
-                t.printStackTrace();
+            } catch (Throwable e) {
+                Log.e(TAG, e.getMessage(), e);
             }
         });
     }
@@ -178,7 +199,7 @@ public class UsersListFragment extends Fragment {
                     postmanDaemon.sleep(5000);
                 }
             } catch (InterruptedException e) {
-                System.out.println(postmanDaemon.getName() + " is now exiting...");
+                Log.i(TAG, postmanDaemon.getName() + " is now exiting...");
             }
         }, UsersListFragment.class.getSimpleName() + ": Postman Daemon");
         postmanDaemon.setDaemon(true);
@@ -188,23 +209,5 @@ public class UsersListFragment extends Fragment {
     public synchronized void stopPostmanDaemon() {
         if (postmanDaemon != null)
             postmanDaemon.interrupt();
-    }
-
-    @Override
-    public void onPause() {
-        super.onPause();
-        stopPostmanDaemon();
-    }
-
-    @Override
-    public void onResume() {
-        super.onResume();
-        startPostmanDaemon();
-    }
-
-    @Override
-    public void onStop() {
-        super.onStop();
-        stopPostmanDaemon();
     }
 }

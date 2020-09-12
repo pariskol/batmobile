@@ -6,6 +6,7 @@ import android.net.InetAddresses;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
+import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.inputmethod.InputMethodManager;
@@ -32,6 +33,7 @@ public class LoginActivity extends AppCompatActivity {
     private static AppCompatActivity instance;
     private boolean twice = false;
     private MainViewModel mViewModel;
+    private static final String TAG = LoginActivity.class.getName();
 
     public static AppCompatActivity getInstance() {
         return instance;
@@ -61,7 +63,7 @@ public class LoginActivity extends AppCompatActivity {
                 Intent i = new Intent(this, MainActivity.class);
                 startActivity(i);
             } catch (Throwable e) {
-                e.printStackTrace();
+               Log.e(TAG, e.getMessage(), e);
                this.runOnUiThread(() -> Toast.makeText(this, "Failed to login!", Toast.LENGTH_SHORT).show());
             }
         });

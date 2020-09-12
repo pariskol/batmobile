@@ -1,5 +1,7 @@
 package gr.kgdev.batmobile.models;
 
+import android.util.Log;
+
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -21,7 +23,7 @@ public class Message {
             this.toUserId = json.getInt("toUserId");
             this.timestamp = json.getString("timestamp");
         } catch (JSONException e) {
-            e.printStackTrace();
+            Log.e(getClass().getName(), "Could not deserialize json");
         }
     }
 
