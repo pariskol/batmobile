@@ -30,6 +30,7 @@ import gr.kgdev.batmobile.fragments.UsersListFragment;
 import gr.kgdev.batmobile.models.User;
 import gr.kgdev.batmobile.utils.AppCache;
 import gr.kgdev.batmobile.services.NotificationsService;
+import gr.kgdev.batmobile.utils.HTTPClient;
 
 @RequiresApi(api = Build.VERSION_CODES.N)
 public class MainActivity extends AppCompatActivity {
@@ -103,28 +104,52 @@ public class MainActivity extends AppCompatActivity {
     protected void onPause() {
         super.onPause();
         NotificationsService.enableNotifications(true);
-        //TODO set status inactive with request to api /logout ,use HTTPCLient class
+        HTTPClient.executeAsync(() -> {
+            try {
+                HTTPClient.POST(HTTPClient.BASE_URL + "/logout", null);
+            } catch (Throwable e) {
+                Log.e(TAG, e.getMessage(), e);
+            }
+        });
     }
 
     @Override
     protected void onStop() {
         super.onStop();
         NotificationsService.enableNotifications(true);
-        //TODO set status inactive with request to api /logout ,use HTTPCLient class
+        HTTPClient.executeAsync(() -> {
+            try {
+                HTTPClient.POST(HTTPClient.BASE_URL + "/logout", null);
+            } catch (Throwable e) {
+                Log.e(TAG, e.getMessage(), e);
+            }
+        });
     }
 
     @Override
     protected void onDestroy() {
         super.onDestroy();
         NotificationsService.enableNotifications(true);
-        //TODO set status inactive with request to api /logout ,use HTTPCLient class
+        HTTPClient.executeAsync(() -> {
+            try {
+                HTTPClient.POST(HTTPClient.BASE_URL + "/logout", null);
+            } catch (Throwable e) {
+                Log.e(TAG, e.getMessage(), e);
+            }
+        });
     }
 
     @Override
     protected void onResume() {
         super.onResume();
         NotificationsService.enableNotifications(false);
-        //TODO set status active with request to api /login ,use HTTPCLient class
+        HTTPClient.executeAsync(() -> {
+            try {
+                HTTPClient.POST(HTTPClient.BASE_URL + "/login", null);
+            } catch (Throwable e) {
+                Log.e(TAG, e.getMessage(), e);
+            }
+        });
     }
 
     @Override
