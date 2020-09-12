@@ -1,12 +1,12 @@
 <component name="libraryTable">
   <library name="Gradle: com.github.timigod:android-chat-ui:v0.1.4@aar">
     <ANNOTATIONS>
-      <root url="jar://$USER_HOME$/.gradle/caches/transforms-2/files-2.1/1a6d304b05926719e239bc91af7c4f30/jetified-android-chat-ui-v0.1.4/annotations.zip!/" />
+      <root url="jar://$USER_HOME$/.gradle/caches/transforms-2/files-2.1/51850adf7a9cc49548a51d1ffffe380a/jetified-android-chat-ui-v0.1.4/annotations.zip!/" />
     </ANNOTATIONS>
     <CLASSES>
-      <root url="file://$USER_HOME$/.gradle/caches/transforms-2/files-2.1/1a6d304b05926719e239bc91af7c4f30/jetified-android-chat-ui-v0.1.4/AndroidManifest.xml" />
-      <root url="jar://$USER_HOME$/.gradle/caches/transforms-2/files-2.1/1a6d304b05926719e239bc91af7c4f30/jetified-android-chat-ui-v0.1.4/jars/classes.jar!/" />
-      <root url="file://$USER_HOME$/.gradle/caches/transforms-2/files-2.1/1a6d304b05926719e239bc91af7c4f30/jetified-android-chat-ui-v0.1.4/res" />
+      <root url="file://$USER_HOME$/.gradle/caches/transforms-2/files-2.1/51850adf7a9cc49548a51d1ffffe380a/jetified-android-chat-ui-v0.1.4/AndroidManifest.xml" />
+      <root url="jar://$USER_HOME$/.gradle/caches/transforms-2/files-2.1/51850adf7a9cc49548a51d1ffffe380a/jetified-android-chat-ui-v0.1.4/jars/classes.jar!/" />
+      <root url="file://$USER_HOME$/.gradle/caches/transforms-2/files-2.1/51850adf7a9cc49548a51d1ffffe380a/jetified-android-chat-ui-v0.1.4/res" />
     </CLASSES>
     <JAVADOC>
       <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/com.github.timigod/android-chat-ui/v0.1.4/d22aec0bfc2449db12afbcfd105d8458b8a19a5/android-chat-ui-v0.1.4-javadoc.jar!/" />
