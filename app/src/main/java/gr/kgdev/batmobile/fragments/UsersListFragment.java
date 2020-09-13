@@ -93,7 +93,6 @@ public class UsersListFragment extends Fragment {
         layoutManager = new LinearLayoutManager(getActivity().getApplicationContext());
         recyclerView.setLayoutManager(layoutManager);
 //        recyclerView.addOnItemTouchListener(new UserListTouchListener(view, getActivity()));
-        setAdapter();
     }
 
     @Override
@@ -122,7 +121,7 @@ public class UsersListFragment extends Fragment {
     }
 
 
-    private void setAdapter() {
+    private void getActiveUsersAndsetAdapter() {
         HTTPClient.executeAsync(() -> {
             try {
                 JSONArray usersJson = new JSONArray(HTTPClient.GET(HTTPClient.BASE_URL + "/get/active_users_details"));
@@ -133,7 +132,7 @@ public class UsersListFragment extends Fragment {
                 }
 
                 mAdapter = new UsersAdapter(users, getActivity());
-                startPostmanDaemon();
+//                startPostmanDaemon();
                 getActivity().runOnUiThread(() -> recyclerView.setAdapter(mAdapter));
             } catch (Throwable e) {
                 Log.e(TAG, e.getMessage(), e);
@@ -195,6 +194,7 @@ public class UsersListFragment extends Fragment {
         postmanDaemon = new Thread(() -> {
             try {
                 while (!postmanDaemon.isInterrupted()) {
+                    getActiveUsersAndsetAdapter();
                     getUnreadMessagesCountPerUser();
                     postmanDaemon.sleep(5000);
                 }
