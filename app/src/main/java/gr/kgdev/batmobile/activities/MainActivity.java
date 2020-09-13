@@ -32,7 +32,7 @@ import gr.kgdev.batmobile.utils.AppCache;
 import gr.kgdev.batmobile.services.NotificationsService;
 import gr.kgdev.batmobile.utils.HTTPClient;
 
-@RequiresApi(api = Build.VERSION_CODES.N)
+@RequiresApi(api = Build.VERSION_CODES.O)
 public class MainActivity extends AppCompatActivity {
 
     private MediaPlayer mediaPlayer;
@@ -104,52 +104,28 @@ public class MainActivity extends AppCompatActivity {
     protected void onPause() {
         super.onPause();
         NotificationsService.enableNotifications(true);
-        HTTPClient.executeAsync(() -> {
-            try {
-                HTTPClient.POST(HTTPClient.BASE_URL + "/logout", null);
-            } catch (Throwable e) {
-                Log.e(TAG, e.getMessage(), e);
-            }
-        });
+        logout();
     }
 
     @Override
     protected void onStop() {
         super.onStop();
         NotificationsService.enableNotifications(true);
-        HTTPClient.executeAsync(() -> {
-            try {
-                HTTPClient.POST(HTTPClient.BASE_URL + "/logout", null);
-            } catch (Throwable e) {
-                Log.e(TAG, e.getMessage(), e);
-            }
-        });
+        logout();
     }
 
     @Override
     protected void onDestroy() {
         super.onDestroy();
         NotificationsService.enableNotifications(true);
-        HTTPClient.executeAsync(() -> {
-            try {
-                HTTPClient.POST(HTTPClient.BASE_URL + "/logout", null);
-            } catch (Throwable e) {
-                Log.e(TAG, e.getMessage(), e);
-            }
-        });
+        logout();
     }
 
     @Override
     protected void onResume() {
         super.onResume();
         NotificationsService.enableNotifications(false);
-        HTTPClient.executeAsync(() -> {
-            try {
-                HTTPClient.POST(HTTPClient.BASE_URL + "/login", null);
-            } catch (Throwable e) {
-                Log.e(TAG, e.getMessage(), e);
-            }
-        });
+        login();
     }
 
     @Override
@@ -207,4 +183,23 @@ public class MainActivity extends AppCompatActivity {
         transaction.commit();
     }
 
+    private void login() {
+        HTTPClient.executeAsync(() -> {
+            try {
+                HTTPClient.POST(HTTPClient.BASE_URL + "/login", null);
+            } catch (Throwable e) {
+                Log.e(TAG, e.getMessage(), e);
+            }
+        });
+    }
+
+    private void logout() {
+        HTTPClient.executeAsync(() -> {
+            try {
+                HTTPClient.POST(HTTPClient.BASE_URL + "/logout", null);
+            } catch (Throwable e) {
+                Log.e(TAG, e.getMessage(), e);
+            }
+        });
+    }
 }
