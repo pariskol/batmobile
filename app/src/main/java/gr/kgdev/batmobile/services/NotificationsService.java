@@ -19,11 +19,13 @@ import org.json.JSONArray;
 import gr.kgdev.batmobile.R;
 import gr.kgdev.batmobile.activities.MainActivity;
 import gr.kgdev.batmobile.utils.AppCache;
+import gr.kgdev.batmobile.utils.BatmobileHTTPClient;
 import gr.kgdev.batmobile.utils.HTTPClient;
 
 @RequiresApi(api = Build.VERSION_CODES.O)
 public class NotificationsService extends Service {
     private ServiceEchoReceiver broadcastReceiver;
+    private HTTPClient httpClient = new BatmobileHTTPClient();
     Thread postmanDaemon;
     private static int PREVIOUS_COUNT = 0;
     private static boolean ENABLE_DAEMON = true;
@@ -92,10 +94,10 @@ public class NotificationsService extends Service {
     }
 
     private void getUnreadMessagesCount() {
-        HTTPClient.executeAsync(() -> {
+        httpClient.executeAsync(() -> {
             try {
-                String url = HTTPClient.BASE_URL + "/get/unread_messages?TO_USER=" + AppCache.getAppUser().getId();
-                JSONArray unreadMessages = new JSONArray(HTTPClient.GET(url));
+                String url = "/get/unread_messages?TO_USER=" + AppCache.getAppUser().getId();
+                JSONArray unreadMessages = (JSONArray) httpClient.GET(url);
                 int count = 0;
                 for (int i = 0; i < unreadMessages.length(); i++)
                      count = unreadMessages.getJSONObject(i).getInt("UNREAD_NUM");

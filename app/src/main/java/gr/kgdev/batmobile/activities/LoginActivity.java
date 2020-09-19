@@ -2,7 +2,6 @@ package gr.kgdev.batmobile.activities;
 
 import android.app.Activity;
 import android.content.Intent;
-import android.net.InetAddresses;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
@@ -19,25 +18,17 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import org.json.JSONObject;
 
-import java.net.InetAddress;
-import java.net.UnknownHostException;
-
 import gr.kgdev.batmobile.R;
 import gr.kgdev.batmobile.models.User;
 import gr.kgdev.batmobile.utils.AppCache;
-import gr.kgdev.batmobile.utils.AudioCall;
+import gr.kgdev.batmobile.utils.BatmobileHTTPClient;
 import gr.kgdev.batmobile.utils.HTTPClient;
 
 public class LoginActivity extends AppCompatActivity {
 
-    private static AppCompatActivity instance;
     private boolean twice = false;
-    private MainViewModel mViewModel;
     private static final String TAG = LoginActivity.class.getName();
-
-    public static AppCompatActivity getInstance() {
-        return instance;
-    }
+    private HTTPClient httpClient = new BatmobileHTTPClient();
 
     @RequiresApi(api = Build.VERSION_CODES.O)
     @Override
@@ -53,10 +44,10 @@ public class LoginActivity extends AppCompatActivity {
 
     @RequiresApi(api = Build.VERSION_CODES.O)
     private void login(TextView usernameTextView, TextView passwordTextView) {
-        HTTPClient.setBasicAuthCredentials(usernameTextView.getText().toString(), passwordTextView.getText().toString());
-        HTTPClient.executeAsync(() -> {
+        httpClient.setBasicAuthCredentials(usernameTextView.getText().toString(), passwordTextView.getText().toString());
+        httpClient.executeAsync(() -> {
             try {
-                JSONObject json = new JSONObject(HTTPClient.POST(HTTPClient.BASE_URL + "/login", null));
+                JSONObject json = (JSONObject) httpClient.POST("/login", null);
                 User appUser = new User(json);
                 AppCache.setAppUser(appUser);
 

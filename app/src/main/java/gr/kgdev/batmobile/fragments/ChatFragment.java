@@ -16,6 +16,7 @@ import androidx.lifecycle.ViewModelProviders;
 import androidx.recyclerview.widget.RecyclerView;
 
 import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
@@ -32,14 +33,12 @@ import gr.kgdev.batmobile.models.User;
 import gr.kgdev.batmobile.utils.ConvertUtils;
 import gr.kgdev.batmobile.utils.HTTPClient;
 
-@RequiresApi(api = Build.VERSION_CODES.N)
+@RequiresApi(api = Build.VERSION_CODES.O)
 public class ChatFragment extends Fragment {
 
     private static final String TAG = MainActivity.class.getName();
+    private final HTTPClient httpClient;
     private MainViewModel mViewModel;
-    private RecyclerView recyclerView;
-    private RecyclerView.Adapter mAdapter;
-    private RecyclerView.LayoutManager layoutManager;
     private ArrayList<ChatMessage> chatMessages;
     private ChatView chatView;
     private User appUser;
@@ -47,10 +46,11 @@ public class ChatFragment extends Fragment {
     private static Thread postmanDaemon;
     private int lastMessageId = 0;
 
-    public ChatFragment(User appUser, User contactUser) {
+    public ChatFragment(User appUser, User contactUser, HTTPClient httpClient) {
         this.appUser = appUser;
         this.contactUser = contactUser;
-        chatMessages = new ArrayList<ChatMessage>();
+        this.chatMessages = new ArrayList<ChatMessage>();
+        this.httpClient = httpClient;
     }
 
     @Nullable
@@ -63,7 +63,7 @@ public class ChatFragment extends Fragment {
     @Override
     public void onViewCreated(View view, @Nullable Bundle savedInstanceState) {
         chatView = (ChatView) getView().findViewById(R.id.chat_view);
-        chatView.setOnSentMessageListener(chatMessage -> sendMessage(chatMessage));
+        chatView.setOnSentMessageListener(this::sendMessage);
     }
 
     @Override
@@ -85,28 +85,17 @@ public class ChatFragment extends Fragment {
         stopPostmanDaemon();
     }
 
-    private ArrayList<ChatMessageWithId> convertJsonToChatMessages(JSONArray messages) throws Exception {
-        ArrayList<ChatMessageWithId> chatMessages = new ArrayList<>();
-        for (int i = 0; i < messages.length(); i++) {
-            Message message = new Message(messages.getJSONObject(i));
-            long millis = ConvertUtils.convertToDate(message.getTimestamp()).getTime();
-            ChatMessage.Type type = message.getFromUserId() == appUser.getId() ? ChatMessage.Type.SENT : ChatMessage.Type.RECEIVED;
-            chatMessages.add(new ChatMessageWithId(message.getId(), message.getMesasage(), millis, type));
-        }
-        return chatMessages;
-    }
-
     private void getChatMessages(Boolean getAll) {
         boolean playSound = false;
         try {
             ArrayList<ChatMessageWithId> newChatMessages = new ArrayList<>();
-            String url = HTTPClient.BASE_URL + "/get/messages?FROM_USER=" + contactUser.getId() + "&TO_USER=" + appUser.getId() + "&FROM_ID=" + lastMessageId;
-            newChatMessages.addAll(convertJsonToChatMessages(new JSONArray(HTTPClient.GET(url))));
+            String url = "/get/messages?FROM_USER=" + contactUser.getId() + "&TO_USER=" + appUser.getId() + "&FROM_ID=" + lastMessageId;
+            newChatMessages.addAll(convertJsonToChatMessages((JSONArray) httpClient.GET(url)));
             // if new messages from other users fetched, prepare to play a notification sound
             playSound = newChatMessages.size() > 0;
 
-            url = HTTPClient.BASE_URL + "/get/messages?FROM_USER=" + appUser.getId() + "&TO_USER=" + contactUser.getId() + "&FROM_ID=" + lastMessageId;
-            newChatMessages.addAll(convertJsonToChatMessages(new JSONArray(HTTPClient.GET(url))));
+            url = "/get/messages?FROM_USER=" + appUser.getId() + "&TO_USER=" + contactUser.getId() + "&FROM_ID=" + lastMessageId;
+            newChatMessages.addAll(convertJsonToChatMessages((JSONArray) httpClient.GET(url)));
 
             if (newChatMessages.size() > 0) {
                     sortAndSetMessages(newChatMessages);
@@ -148,7 +137,9 @@ public class ChatFragment extends Fragment {
                     postmanDaemon.sleep(1000);
                 }
             } catch (InterruptedException e) {
-                Log.i(TAG, postmanDaemon.getName() + " is now exiting...");
+                Log.d(TAG, postmanDaemon.getName() + " is now exiting...");
+            } catch (Throwable e) {
+                Log.e(TAG, e.getMessage());
             }
         }, ChatFragment.class.getSimpleName() + ": Postman Daemon");
         postmanDaemon.setDaemon(true);
@@ -161,20 +152,11 @@ public class ChatFragment extends Fragment {
     }
 
     private boolean sendMessage(ChatMessage chatMessage) {
-        HTTPClient.executeAsync(() -> {
+        httpClient.executeAsync(() -> {
             try {
-                JSONObject json = new JSONObject();
-                json.put("MESSAGE", chatMessage.getMessage());
-                json.put("FROM_USER", appUser.getId());
-                json.put("TO_USER", contactUser.getId());
-                HTTPClient.POST(HTTPClient.BASE_URL + "/post/message", json);
-                // here we add the message to view
-                getActivity().runOnUiThread(() -> {
-//                    chatMessages.add(chatMessage);
-//                    chatView.addMessage(chatMessage);
-                    chatView.getInputEditText().getText().clear();
-                    ;
-                });
+                JSONObject json = convertChatMessageToJSON(chatMessage);
+                httpClient.POST("/post/message", json);
+                getActivity().runOnUiThread(() -> chatView.getInputEditText().getText().clear());
             } catch (Throwable e) {
                 Log.e(TAG, e.getMessage(), e);
                 getActivity().runOnUiThread(() -> Toast.makeText(getActivity(), e.getMessage(), Toast.LENGTH_SHORT).show());
@@ -182,5 +164,24 @@ public class ChatFragment extends Fragment {
         });
         // we return false because message will be added to view if POST request executed successfully
         return false;
+    }
+
+    private ArrayList<ChatMessageWithId> convertJsonToChatMessages(JSONArray messages) throws Exception {
+        ArrayList<ChatMessageWithId> chatMessages = new ArrayList<>();
+        for (int i = 0; i < messages.length(); i++) {
+            Message message = new Message(messages.getJSONObject(i));
+            long millis = ConvertUtils.convertToDate(message.getTimestamp()).getTime();
+            ChatMessage.Type type = message.getFromUserId() == appUser.getId() ? ChatMessage.Type.SENT : ChatMessage.Type.RECEIVED;
+            chatMessages.add(new ChatMessageWithId(message.getId(), message.getMesasage(), millis, type));
+        }
+        return chatMessages;
+    }
+
+    private JSONObject convertChatMessageToJSON(ChatMessage chatMessage) throws JSONException {
+        JSONObject json = new JSONObject();
+        json.put("MESSAGE", chatMessage.getMessage());
+        json.put("FROM_USER", appUser.getId());
+        json.put("TO_USER", contactUser.getId());
+        return json;
     }
 }

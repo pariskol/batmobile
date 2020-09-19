@@ -8,6 +8,7 @@ import org.json.JSONObject;
 public class User {
 
     private String username;
+    private String password;
     private Integer id;
     private Boolean isActive;
 
@@ -52,5 +53,12 @@ public class User {
         isActive = active;
     }
 
+    public String getPassword() {
+        return password;
+    }
+
+    public void setPassword(String password) {
+        this.password = password;
+    }
 }
 

@@ -30,12 +30,14 @@ import gr.kgdev.batmobile.fragments.UsersListFragment;
 import gr.kgdev.batmobile.models.User;
 import gr.kgdev.batmobile.utils.AppCache;
 import gr.kgdev.batmobile.services.NotificationsService;
+import gr.kgdev.batmobile.utils.BatmobileHTTPClient;
 import gr.kgdev.batmobile.utils.HTTPClient;
 
 @RequiresApi(api = Build.VERSION_CODES.O)
 public class MainActivity extends AppCompatActivity {
 
     private MediaPlayer mediaPlayer;
+    private HTTPClient httpClient = new BatmobileHTTPClient();
     private static final String TAG = MainActivity.class.getName();
 
     private BroadcastReceiver pong = new BroadcastReceiver(){
@@ -83,7 +85,7 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.main_activity);
         if (savedInstanceState == null) {
             getSupportFragmentManager().beginTransaction()
-                    .replace(R.id.container, new UsersListFragment())
+                    .replace(R.id.container, new UsersListFragment(httpClient))
                     .commitNow();
         }
 
@@ -168,7 +170,7 @@ public class MainActivity extends AppCompatActivity {
 
     public void loadChatFragment(User user) throws JSONException {
         getSupportActionBar().setTitle("Chating with " + user.getUsername());
-        Fragment newFragment = new ChatFragment(AppCache.getAppUser(), user);
+        Fragment newFragment = new ChatFragment(AppCache.getAppUser(), user, httpClient);
         FragmentTransaction transaction = this.getSupportFragmentManager().beginTransaction();
         transaction.replace(R.id.container, newFragment);
         transaction.addToBackStack(null);
@@ -176,7 +178,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void loadUsersListFragment() {
-        Fragment newFragment = new UsersListFragment();
+        Fragment newFragment = new UsersListFragment(httpClient);
         FragmentTransaction transaction = this.getSupportFragmentManager().beginTransaction();
         transaction.replace(R.id.container, newFragment);
         transaction.addToBackStack(null);
@@ -184,9 +186,9 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void login() {
-        HTTPClient.executeAsync(() -> {
+        httpClient.executeAsync(() -> {
             try {
-                HTTPClient.POST(HTTPClient.BASE_URL + "/login", null);
+                httpClient.POST("/login", null);
             } catch (Throwable e) {
                 Log.e(TAG, e.getMessage(), e);
             }
@@ -194,9 +196,9 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void logout() {
-        HTTPClient.executeAsync(() -> {
+        httpClient.executeAsync(() -> {
             try {
-                HTTPClient.POST(HTTPClient.BASE_URL + "/logout", null);
+                httpClient.POST("/logout", null);
             } catch (Throwable e) {
                 Log.e(TAG, e.getMessage(), e);
             }

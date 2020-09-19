@@ -43,10 +43,11 @@ public class UsersListFragment extends Fragment {
     private ArrayList<User> users;
 
     private static Thread postmanDaemon;
+    private HTTPClient httpClient;
 
-    public UsersListFragment() {
+    public UsersListFragment(HTTPClient httpClient) {
         super();
-        //TODO update user status to active
+        this.httpClient = httpClient;
     }
 
     @Nullable
@@ -108,6 +109,7 @@ public class UsersListFragment extends Fragment {
         stopPostmanDaemon();
     }
 
+    @RequiresApi(api = Build.VERSION_CODES.O)
     @Override
     public void onResume() {
         super.onResume();
@@ -121,24 +123,20 @@ public class UsersListFragment extends Fragment {
     }
 
 
-    private void getActiveUsersAndsetAdapter() {
-        HTTPClient.executeAsync(() -> {
-            try {
-                JSONArray usersJson = new JSONArray(HTTPClient.GET(HTTPClient.BASE_URL + "/get/active_users_details"));
-                users = new ArrayList<>();
-                for (int i = 0; i < usersJson.length(); i++) {
-                    if (!AppCache.getAppUser().getId().equals(usersJson.getJSONObject(i).getInt("ID")))
-                        users.add(new User(usersJson.getJSONObject(i)));
-                }
-
-                mAdapter = new UsersAdapter(users, getActivity());
-//                startPostmanDaemon();
-                getActivity().runOnUiThread(() -> recyclerView.setAdapter(mAdapter));
-            } catch (Throwable e) {
-                Log.e(TAG, e.getMessage(), e);
+    private void getActiveUsersAndSetAdapter() {
+        try {
+            JSONArray usersJson = (JSONArray) httpClient.GET("/get/active_users_details");
+            users = new ArrayList<>();
+            for (int i = 0; i < usersJson.length(); i++) {
+                if (!AppCache.getAppUser().getId().equals(usersJson.getJSONObject(i).getInt("ID")))
+                    users.add(new User(usersJson.getJSONObject(i)));
             }
 
-        });
+            mAdapter = new UsersAdapter(users, getActivity());
+            getActivity().runOnUiThread(() -> recyclerView.setAdapter(mAdapter));
+        } catch (Throwable e) {
+            Log.e(TAG, e.getMessage(), e);
+        }
     }
 
     private void filterUsers(String query) {
@@ -155,6 +153,7 @@ public class UsersListFragment extends Fragment {
         getActivity().runOnUiThread(() -> recyclerView.setAdapter(mAdapter));
     }
 
+    @RequiresApi(api = Build.VERSION_CODES.O)
     private void getUnreadMessagesCountPerUser() {
         if (mAdapter == null)
             return;
@@ -162,44 +161,45 @@ public class UsersListFragment extends Fragment {
         AtomicBoolean playSound = new AtomicBoolean(false);
         AtomicInteger totalCount = new AtomicInteger(0);
         final int oldTotalCount = mAdapter.getTotalUnreadMessagesCount();
-        HTTPClient.executeAsync(() -> {
-            try {
-                String url = HTTPClient.BASE_URL + "/get/unread_messages?TO_USER=" + AppCache.getAppUser().getId();
-                JSONArray unreadMessages = new JSONArray(HTTPClient.GET(url));
-                for (int i = 0; i < unreadMessages.length(); i++) {
-                    Integer userId = unreadMessages.getJSONObject(i).getInt("FROM_USER");
-                    Integer count = unreadMessages.getJSONObject(i).getInt("UNREAD_NUM");
-                    totalCount.getAndAdd(count);
-                    mAdapter.setNotificationsForUser(userId, count);
-                    if (count > 0)
-                        playSound.set(true);
-                }
-
-                if (this.isVisible()) {
-                    getActivity().runOnUiThread(() -> {
-                        mAdapter.notifyDataSetChanged();
-                        if (playSound.get() && totalCount.get() > oldTotalCount) {
-                            ((MainActivity) getActivity()).playNotificationSound();
-                        }
-                    });
-                }
-            } catch (Throwable e) {
-                Log.e(TAG, e.getMessage(), e);
+        try {
+            String url = "/get/unread_messages?TO_USER=" + AppCache.getAppUser().getId();
+            JSONArray unreadMessages = (JSONArray) httpClient.GET(url);
+            for (int i = 0; i < unreadMessages.length(); i++) {
+                Integer userId = unreadMessages.getJSONObject(i).getInt("FROM_USER");
+                Integer count = unreadMessages.getJSONObject(i).getInt("UNREAD_NUM");
+                totalCount.getAndAdd(count);
+                mAdapter.setNotificationsForUser(userId, count);
+                if (count > 0)
+                    playSound.set(true);
             }
-        });
+
+            if (this.isVisible()) {
+                getActivity().runOnUiThread(() -> {
+                    mAdapter.notifyDataSetChanged();
+                    if (playSound.get() && totalCount.get() > oldTotalCount) {
+                        ((MainActivity) getActivity()).playNotificationSound();
+                    }
+                });
+            }
+        } catch (Throwable e) {
+            Log.e(TAG, e.getMessage(), e);
+        }
     }
 
+    @RequiresApi(api = Build.VERSION_CODES.O)
     private synchronized void startPostmanDaemon() {
         stopPostmanDaemon();
         postmanDaemon = new Thread(() -> {
             try {
                 while (!postmanDaemon.isInterrupted()) {
-                    getActiveUsersAndsetAdapter();
+                    getActiveUsersAndSetAdapter();
                     getUnreadMessagesCountPerUser();
                     postmanDaemon.sleep(5000);
                 }
             } catch (InterruptedException e) {
-                Log.i(TAG, postmanDaemon.getName() + " is now exiting...");
+                Log.d(TAG, postmanDaemon.getName() + " is now exiting...");
+            } catch (Throwable e) {
+                Log.e(TAG, e.getMessage());
             }
         }, UsersListFragment.class.getSimpleName() + ": Postman Daemon");
         postmanDaemon.setDaemon(true);
