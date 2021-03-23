@@ -8,7 +8,6 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
-import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -19,6 +18,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import org.json.JSONException;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 
@@ -29,7 +29,7 @@ import gr.kgdev.batmobile.models.User;
 @RequiresApi(api = Build.VERSION_CODES.N)
 public class UsersAdapter extends RecyclerView.Adapter<UsersAdapter.MyViewHolder> {
     private final MainActivity activity;
-    private List<User> usersDataset;
+    private List<User> users;
     private HashMap<Integer, Integer> notificationsMap = new HashMap<>();
     private MyViewHolder viewHolder ;
     private static final String TAG = UsersAdapter.class.getName();
@@ -53,8 +53,8 @@ public class UsersAdapter extends RecyclerView.Adapter<UsersAdapter.MyViewHolder
     }
 
     // Provide a suitable constructor (depends on the kind of dataset)
-    public UsersAdapter(ArrayList<User> myDataset, Activity activity) {
-        this.usersDataset = myDataset;
+    public UsersAdapter(List<User> users, Activity activity) {
+        this.users = users;
         this.activity = activity instanceof MainActivity ? (MainActivity) activity : null ;
     }
 
@@ -76,7 +76,7 @@ public class UsersAdapter extends RecyclerView.Adapter<UsersAdapter.MyViewHolder
         this.viewHolder = holder;
         // - get element from your dataset at this position
         // - replace the contents of the view with that element
-        User user = usersDataset.get(position);
+        User user = users.get(position);
         ((TextView) holder.linearLayout.findViewById(R.id.username)).setText(user.getUsername());
 
         TextView notificationTextView = (TextView) viewHolder.linearLayout.findViewById(R.id.badge);
@@ -96,7 +96,7 @@ public class UsersAdapter extends RecyclerView.Adapter<UsersAdapter.MyViewHolder
 
         if (user.isActive()) {
             ((TextView) holder.linearLayout.findViewById(R.id.status)).setText("Active");
-            ((TextView) holder.linearLayout.findViewById(R.id.status)).setTextColor(Color.BLUE);
+            ((TextView) holder.linearLayout.findViewById(R.id.status)).setTextColor(Color.GREEN);
         } else {
             ((TextView) holder.linearLayout.findViewById(R.id.status)).setText("Inactive");
             ((TextView) holder.linearLayout.findViewById(R.id.status)).setTextColor(Color.RED);
@@ -116,21 +116,31 @@ public class UsersAdapter extends RecyclerView.Adapter<UsersAdapter.MyViewHolder
     }
 
     public User getItem(int pos) {
-        return usersDataset.get(pos);
+        return users.get(pos);
     }
 
     public synchronized void setNotificationsForUser(Integer userId, Integer num) {
-        User targetUser = usersDataset.stream().filter(user -> user.getId() == userId).findAny().get();
+        User targetUser = users.stream().filter(user -> user.getId().equals(userId)).findAny().get();
         notificationsMap.put(targetUser.getId(), num);
     }
 
     // Return the size of your dataset (invoked by the layout manager)
     @Override
     public int getItemCount() {
-        return usersDataset.size();
+        return users.size();
     }
 
     public int getTotalUnreadMessagesCount() {
+        Collection<Integer> l = notificationsMap.values();
         return notificationsMap.values().stream().mapToInt(o -> o).sum();
+    }
+
+    public List<User> getUsers() {
+        return users;
+    }
+
+    public synchronized void setUsers(List<User> users) {
+        this.users = users;
+        activity.runOnUiThread(() -> this.notifyDataSetChanged());
     }
 }

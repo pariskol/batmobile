@@ -18,6 +18,7 @@ import android.widget.Toast;
 
 import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.app.AppCompatDelegate;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentTransaction;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
@@ -39,6 +40,11 @@ public class MainActivity extends AppCompatActivity {
     private MediaPlayer mediaPlayer;
     private HTTPClient httpClient = new BatmobileHTTPClient();
     private static final String TAG = MainActivity.class.getName();
+
+    public MainActivity() {
+        super();
+        AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES);
+    }
 
     private BroadcastReceiver pong = new BroadcastReceiver(){
         public void onReceive (Context context, Intent intent) {

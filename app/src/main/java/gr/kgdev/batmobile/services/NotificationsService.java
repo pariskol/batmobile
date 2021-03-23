@@ -36,7 +36,13 @@ public class NotificationsService extends Service {
 
     public synchronized static void enableNotifications(boolean enabled) {
         ENABLE_DAEMON = enabled;
+        PREVIOUS_COUNT = -1;
+    }
+
+    public synchronized static boolean shouldNotify() {
+        boolean shouldNotify = PREVIOUS_COUNT > -1;
         PREVIOUS_COUNT = 0;
+        return shouldNotify;
     }
 
     @Override
@@ -100,9 +106,9 @@ public class NotificationsService extends Service {
                 JSONArray unreadMessages = (JSONArray) httpClient.GET(url);
                 int count = 0;
                 for (int i = 0; i < unreadMessages.length(); i++)
-                     count = unreadMessages.getJSONObject(i).getInt("UNREAD_NUM");
+                     count += unreadMessages.getJSONObject(i).getInt("UNREAD_NUM");
 
-                if (count > 0 && count > PREVIOUS_COUNT)
+                if (count > 0 && count > PREVIOUS_COUNT && shouldNotify())
                     createNotification();
 
                 PREVIOUS_COUNT = count;

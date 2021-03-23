@@ -1,11 +1,13 @@
 package gr.kgdev.batmobile.fragments;
 
+import android.graphics.Color;
 import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ListView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
@@ -43,8 +45,9 @@ public class ChatFragment extends Fragment {
     private ChatView chatView;
     private User appUser;
     private User contactUser;
-    private static Thread postmanDaemon;
+    private Thread postmanDaemon;
     private int lastMessageId = 0;
+    private boolean isChatViewInitialized;
 
     public ChatFragment(User appUser, User contactUser, HTTPClient httpClient) {
         this.appUser = appUser;
@@ -104,8 +107,11 @@ public class ChatFragment extends Fragment {
                 if (getActivity() != null)
                     getActivity().runOnUiThread(() -> chatView.addMessages(new ArrayList<ChatMessage>(newChatMessages)));
 
-                if (playSound)
+                if (playSound && isChatViewInitialized)
                     ((MainActivity) getActivity()).playNotificationSound();
+
+                if (!isChatViewInitialized)
+                    isChatViewInitialized = true;
             }
         } catch (Throwable e) {
             Log.e(TAG, e.getMessage(), e);
@@ -133,13 +139,12 @@ public class ChatFragment extends Fragment {
         postmanDaemon = new Thread(() -> {
             try {
                 while (!postmanDaemon.isInterrupted()) {
+                    isChatViewInitialized = false;
                     getChatMessages(false);
                     postmanDaemon.sleep(1000);
                 }
             } catch (InterruptedException e) {
                 Log.d(TAG, postmanDaemon.getName() + " is now exiting...");
-            } catch (Throwable e) {
-                Log.e(TAG, e.getMessage());
             }
         }, ChatFragment.class.getSimpleName() + ": Postman Daemon");
         postmanDaemon.setDaemon(true);

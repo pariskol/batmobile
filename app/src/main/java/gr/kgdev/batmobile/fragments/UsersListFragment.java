@@ -28,6 +28,7 @@ import gr.kgdev.batmobile.R;
 import gr.kgdev.batmobile.activities.MainActivity;
 import gr.kgdev.batmobile.activities.MainViewModel;
 import gr.kgdev.batmobile.models.User;
+import gr.kgdev.batmobile.services.NotificationsService;
 import gr.kgdev.batmobile.utils.AppCache;
 import gr.kgdev.batmobile.utils.HTTPClient;
 
@@ -37,13 +38,14 @@ public class UsersListFragment extends Fragment {
     private static final String TAG = MainActivity.class.getName();
     private MainViewModel mViewModel;
     private RecyclerView recyclerView;
-    private UsersAdapter mAdapter;
+    private UsersAdapter usersAdapter;
     private RecyclerView.LayoutManager layoutManager;
     private SearchView searchView;
     private ArrayList<User> users;
 
-    private static Thread postmanDaemon;
+    private Thread postmanDaemon;
     private HTTPClient httpClient;
+    private boolean isFiltered = false;
 
     public UsersListFragment(HTTPClient httpClient) {
         super();
@@ -113,6 +115,8 @@ public class UsersListFragment extends Fragment {
     @Override
     public void onResume() {
         super.onResume();
+        isFiltered = false;
+        usersAdapter = null;
         startPostmanDaemon();
     }
 
@@ -132,8 +136,16 @@ public class UsersListFragment extends Fragment {
                     users.add(new User(usersJson.getJSONObject(i)));
             }
 
-            mAdapter = new UsersAdapter(users, getActivity());
-            getActivity().runOnUiThread(() -> recyclerView.setAdapter(mAdapter));
+            if (isFiltered)
+                return;
+
+            if (usersAdapter == null) {
+                usersAdapter = new UsersAdapter(users, getActivity());
+                getActivity().runOnUiThread(() -> recyclerView.setAdapter(usersAdapter));
+            }
+
+            usersAdapter.setUsers(users);
+
         } catch (Throwable e) {
             Log.e(TAG, e.getMessage(), e);
         }
@@ -143,24 +155,25 @@ public class UsersListFragment extends Fragment {
         List<User> filteredUsers = null;
         if (query.isEmpty()) {
             filteredUsers = users;
+            isFiltered = false;
         } else {
             filteredUsers = users.stream().filter(user -> {
                 Boolean answer = user.getUsername().toLowerCase().contains(query.toLowerCase());
                 return answer;
             }).collect(Collectors.toList());
+            isFiltered = true;
         }
-        mAdapter = new UsersAdapter((ArrayList<User>) filteredUsers, getActivity());
-        getActivity().runOnUiThread(() -> recyclerView.setAdapter(mAdapter));
+        usersAdapter.setUsers(filteredUsers);
     }
 
     @RequiresApi(api = Build.VERSION_CODES.O)
     private void getUnreadMessagesCountPerUser() {
-        if (mAdapter == null)
+        if (usersAdapter == null)
             return;
 
         AtomicBoolean playSound = new AtomicBoolean(false);
         AtomicInteger totalCount = new AtomicInteger(0);
-        final int oldTotalCount = mAdapter.getTotalUnreadMessagesCount();
+        final int oldTotalCount = usersAdapter.getTotalUnreadMessagesCount();
         try {
             String url = "/get/unread_messages?TO_USER=" + AppCache.getAppUser().getId();
             JSONArray unreadMessages = (JSONArray) httpClient.GET(url);
@@ -168,14 +181,14 @@ public class UsersListFragment extends Fragment {
                 Integer userId = unreadMessages.getJSONObject(i).getInt("FROM_USER");
                 Integer count = unreadMessages.getJSONObject(i).getInt("UNREAD_NUM");
                 totalCount.getAndAdd(count);
-                mAdapter.setNotificationsForUser(userId, count);
-                if (count > 0)
+                usersAdapter.setNotificationsForUser(userId, count);
+                if (count > 0 && NotificationsService.shouldNotify())
                     playSound.set(true);
             }
 
             if (this.isVisible()) {
                 getActivity().runOnUiThread(() -> {
-                    mAdapter.notifyDataSetChanged();
+                    usersAdapter.notifyDataSetChanged();
                     if (playSound.get() && totalCount.get() > oldTotalCount) {
                         ((MainActivity) getActivity()).playNotificationSound();
                     }

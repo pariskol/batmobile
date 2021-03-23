@@ -15,6 +15,7 @@ import android.widget.Toast;
 
 import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.app.AppCompatDelegate;
 
 import org.json.JSONObject;
 
@@ -29,6 +30,14 @@ public class LoginActivity extends AppCompatActivity {
     private boolean twice = false;
     private static final String TAG = LoginActivity.class.getName();
     private HTTPClient httpClient = new BatmobileHTTPClient();
+    private TextView usernameTextView;
+    private TextView passwordTextView;
+    private Button loginButton;
+
+    public LoginActivity() {
+        super();
+        AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES);
+    }
 
     @RequiresApi(api = Build.VERSION_CODES.O)
     @Override
@@ -36,14 +45,16 @@ public class LoginActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.login_activity);
         setupUI(findViewById(R.id.parent));
-        TextView usernameTextView = (TextView) this.findViewById(R.id.username);
-        TextView passwordTextView = (TextView) this.findViewById(R.id.password);
-        Button loginButton = (Button) this.findViewById(R.id.login_button);
+        usernameTextView = (TextView) this.findViewById(R.id.username);
+        passwordTextView = (TextView) this.findViewById(R.id.password);
+        loginButton = (Button) this.findViewById(R.id.login_button);
         loginButton.setOnClickListener(v -> login(usernameTextView, passwordTextView));
     }
 
     @RequiresApi(api = Build.VERSION_CODES.O)
     private void login(TextView usernameTextView, TextView passwordTextView) {
+        this.hideSoftKeyboard(this);
+        this.loginButton.setActivated(false);
         httpClient.setBasicAuthCredentials(usernameTextView.getText().toString(), passwordTextView.getText().toString());
         httpClient.executeAsync(() -> {
             try {
@@ -56,6 +67,8 @@ public class LoginActivity extends AppCompatActivity {
             } catch (Throwable e) {
                Log.e(TAG, e.getMessage(), e);
                this.runOnUiThread(() -> Toast.makeText(this, "Failed to login!", Toast.LENGTH_SHORT).show());
+            } finally {
+                this.runOnUiThread(() -> this.loginButton.setActivated(false));
             }
         });
     }
@@ -76,11 +89,15 @@ public class LoginActivity extends AppCompatActivity {
     }
 
     public void hideSoftKeyboard(Activity activity) {
-        InputMethodManager inputMethodManager =
-                (InputMethodManager) activity.getSystemService(
-                        Activity.INPUT_METHOD_SERVICE);
-        inputMethodManager.hideSoftInputFromWindow(
-                activity.getCurrentFocus().getWindowToken(), 0);
+        try {
+            InputMethodManager inputMethodManager =
+                    (InputMethodManager) activity.getSystemService(
+                            Activity.INPUT_METHOD_SERVICE);
+            inputMethodManager.hideSoftInputFromWindow(
+                    activity.getCurrentFocus().getWindowToken(), 0);
+        } catch (Throwable t) {
+            //ignore
+        }
     }
 
     public void setupUI(View view) {
