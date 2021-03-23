@@ -1,5 +1,6 @@
 package gr.kgdev.batmobile.activities;
 
+import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.Intent;
 import android.os.Build;
@@ -100,6 +101,7 @@ public class LoginActivity extends AppCompatActivity {
         }
     }
 
+    @SuppressLint("ClickableViewAccessibility")
     public void setupUI(View view) {
 
         // Set up touch listener for non-text box views to hide keyboard.

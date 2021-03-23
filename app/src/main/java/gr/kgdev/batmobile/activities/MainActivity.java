@@ -1,5 +1,6 @@
 package gr.kgdev.batmobile.activities;
 
+import android.annotation.SuppressLint;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -152,6 +153,7 @@ public class MainActivity extends AppCompatActivity {
 
     }
 
+    @SuppressLint("ResourceType")
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         MenuInflater inflater = getMenuInflater();
