@@ -4,14 +4,6 @@ import android.os.Build;
 
 import androidx.annotation.RequiresApi;
 
-import com.squareup.okhttp.MediaType;
-import com.squareup.okhttp.OkHttpClient;
-import com.squareup.okhttp.Request;
-import com.squareup.okhttp.RequestBody;
-import com.squareup.okhttp.Response;
-
-import org.json.JSONArray;
-import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.IOException;
@@ -19,11 +11,17 @@ import java.util.Base64;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-public class HTTPClient {
+import okhttp3.MediaType;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.RequestBody;
+import okhttp3.Response;
+
+public class HttpClient {
 
     private ExecutorService EXECUTOR_SERVICE = null;
-    private static String BASIC_AUTH = null;
-    private OkHttpClient client = new OkHttpClient();
+    protected static String BASIC_AUTH = null;
+    protected final OkHttpClient client = new OkHttpClient();
     private final MediaType JSON = MediaType.parse("application/json; charset=utf-8");
 
     /**
@@ -39,43 +37,45 @@ public class HTTPClient {
         EXECUTOR_SERVICE.execute(runnable);
     }
 
-    public Object GET(String url) throws Exception {
+    public Object get(String url) throws Exception {
         checkForCredentials();
         Request request = new Request.Builder()
                 .url(url)
-                .addHeader("Authorization",  BASIC_AUTH)
+                .addHeader("Authorization", BASIC_AUTH)
                 .build();
 
-        Response response = client.newCall(request).execute();
-        if (response.code() != 200)
-            throw new IOException("Status code: " + response.code() + " , " + serialize(response));
-        return serialize(response);
+        try(Response response = client.newCall(request).execute();) {
+            if (!response.isSuccessful())
+                throw new IOException("Status code: " + response.code() + " , " + response.body().string());
+            return serialize(response.body().string());
+        }
     }
 
-    protected Object serialize(Response response) throws Exception {
-       return response.body().string();
+    protected Object serialize(String response) throws Exception {
+       return response;
     }
 
-    private void checkForCredentials() throws IllegalStateException{
+    protected void checkForCredentials() throws IllegalStateException{
         if (BASIC_AUTH == null)
             throw new IllegalStateException("This HTTPClient demands a Basic Authentication header to be set," +
                     " in order this to be done you must first call 'setBasicAuthCredentials' method");
     }
 
-    public Object POST(String url, JSONObject json) throws Exception {
+    public Object post(String url, JSONObject json) throws Exception {
         checkForCredentials();
         json = json == null ? new JSONObject() : json;
         RequestBody body = RequestBody.create(JSON, json.toString());
         Request request = new Request.Builder()
                 .url(url)
-                .addHeader("Authorization",  BASIC_AUTH)
+                .addHeader("Authorization", BASIC_AUTH)
                 .post(body)
                 .build();
-        Response response = client.newCall(request).execute();
 
-        if (response.code() != 200)
-            throw new IOException("Status code: " + response.code() + " , " + serialize(response));
-        return serialize(response);
+        try(Response response = client.newCall(request).execute();) {
+            if (!response.isSuccessful())
+                throw new IOException("Status code: " + response.code() + " , " + response.body().string());
+            return serialize(response.body().string());
+        }
     }
 
     @RequiresApi(api = Build.VERSION_CODES.O)

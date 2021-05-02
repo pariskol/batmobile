@@ -23,14 +23,14 @@ import org.json.JSONObject;
 import gr.kgdev.batmobile.R;
 import gr.kgdev.batmobile.models.User;
 import gr.kgdev.batmobile.utils.AppCache;
-import gr.kgdev.batmobile.utils.BatmobileHTTPClient;
-import gr.kgdev.batmobile.utils.HTTPClient;
+import gr.kgdev.batmobile.utils.BatmobileHttpClient;
+import gr.kgdev.batmobile.utils.HttpClient;
 
 public class LoginActivity extends AppCompatActivity {
 
     private boolean twice = false;
     private static final String TAG = LoginActivity.class.getName();
-    private HTTPClient httpClient = new BatmobileHTTPClient();
+    private HttpClient httpClient = new BatmobileHttpClient();
     private TextView usernameTextView;
     private TextView passwordTextView;
     private Button loginButton;
@@ -59,7 +59,7 @@ public class LoginActivity extends AppCompatActivity {
         httpClient.setBasicAuthCredentials(usernameTextView.getText().toString(), passwordTextView.getText().toString());
         httpClient.executeAsync(() -> {
             try {
-                JSONObject json = (JSONObject) httpClient.POST("/login", null);
+                JSONObject json = (JSONObject) httpClient.post("/login", null);
                 User appUser = new User(json);
                 AppCache.setAppUser(appUser);
 

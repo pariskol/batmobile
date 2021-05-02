@@ -32,14 +32,14 @@ import gr.kgdev.batmobile.fragments.UsersListFragment;
 import gr.kgdev.batmobile.models.User;
 import gr.kgdev.batmobile.utils.AppCache;
 import gr.kgdev.batmobile.services.NotificationsService;
-import gr.kgdev.batmobile.utils.BatmobileHTTPClient;
-import gr.kgdev.batmobile.utils.HTTPClient;
+import gr.kgdev.batmobile.utils.BatmobileHttpClient;
+import gr.kgdev.batmobile.utils.HttpClient;
 
 @RequiresApi(api = Build.VERSION_CODES.O)
 public class MainActivity extends AppCompatActivity {
 
     private MediaPlayer mediaPlayer;
-    private HTTPClient httpClient = new BatmobileHTTPClient();
+    private HttpClient httpClient = new BatmobileHttpClient();
     private static final String TAG = MainActivity.class.getName();
 
     public MainActivity() {
@@ -196,7 +196,7 @@ public class MainActivity extends AppCompatActivity {
     private void login() {
         httpClient.executeAsync(() -> {
             try {
-                httpClient.POST("/login", null);
+                httpClient.post("/login", null);
             } catch (Throwable e) {
                 Log.e(TAG, e.getMessage(), e);
             }
@@ -206,7 +206,7 @@ public class MainActivity extends AppCompatActivity {
     private void logout() {
         httpClient.executeAsync(() -> {
             try {
-                httpClient.POST("/logout", null);
+                httpClient.post("/logout", null);
             } catch (Throwable e) {
                 Log.e(TAG, e.getMessage(), e);
             }

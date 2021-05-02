@@ -30,7 +30,7 @@ import gr.kgdev.batmobile.activities.MainViewModel;
 import gr.kgdev.batmobile.models.User;
 import gr.kgdev.batmobile.services.NotificationsService;
 import gr.kgdev.batmobile.utils.AppCache;
-import gr.kgdev.batmobile.utils.HTTPClient;
+import gr.kgdev.batmobile.utils.HttpClient;
 
 @RequiresApi(api = Build.VERSION_CODES.N)
 public class UsersListFragment extends Fragment {
@@ -44,10 +44,10 @@ public class UsersListFragment extends Fragment {
     private ArrayList<User> users;
 
     private Thread postmanDaemon;
-    private HTTPClient httpClient;
+    private HttpClient httpClient;
     private boolean isFiltered = false;
 
-    public UsersListFragment(HTTPClient httpClient) {
+    public UsersListFragment(HttpClient httpClient) {
         super();
         this.httpClient = httpClient;
     }
@@ -129,7 +129,7 @@ public class UsersListFragment extends Fragment {
 
     private void getActiveUsersAndSetAdapter() {
         try {
-            JSONArray usersJson = (JSONArray) httpClient.GET("/get/active_users_details");
+            JSONArray usersJson = (JSONArray) httpClient.get("/get/active_users_details");
             users = new ArrayList<>();
             for (int i = 0; i < usersJson.length(); i++) {
                 if (!AppCache.getAppUser().getId().equals(usersJson.getJSONObject(i).getInt("ID")))
@@ -176,7 +176,7 @@ public class UsersListFragment extends Fragment {
         final int oldTotalCount = usersAdapter.getTotalUnreadMessagesCount();
         try {
             String url = "/get/unread_messages?TO_USER=" + AppCache.getAppUser().getId();
-            JSONArray unreadMessages = (JSONArray) httpClient.GET(url);
+            JSONArray unreadMessages = (JSONArray) httpClient.get(url);
             for (int i = 0; i < unreadMessages.length(); i++) {
                 Integer userId = unreadMessages.getJSONObject(i).getInt("FROM_USER");
                 Integer count = unreadMessages.getJSONObject(i).getInt("UNREAD_NUM");

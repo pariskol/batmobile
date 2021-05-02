@@ -1,13 +1,11 @@
 package gr.kgdev.batmobile.fragments;
 
-import android.graphics.Color;
 import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.ListView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
@@ -15,7 +13,6 @@ import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProviders;
-import androidx.recyclerview.widget.RecyclerView;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -33,13 +30,13 @@ import gr.kgdev.batmobile.models.ChatMessageWithId;
 import gr.kgdev.batmobile.models.Message;
 import gr.kgdev.batmobile.models.User;
 import gr.kgdev.batmobile.utils.ConvertUtils;
-import gr.kgdev.batmobile.utils.HTTPClient;
+import gr.kgdev.batmobile.utils.HttpClient;
 
 @RequiresApi(api = Build.VERSION_CODES.O)
 public class ChatFragment extends Fragment {
 
     private static final String TAG = MainActivity.class.getName();
-    private final HTTPClient httpClient;
+    private final HttpClient httpClient;
     private MainViewModel mViewModel;
     private ArrayList<ChatMessage> chatMessages;
     private ChatView chatView;
@@ -49,7 +46,7 @@ public class ChatFragment extends Fragment {
     private int lastMessageId = 0;
     private boolean isChatViewInitialized;
 
-    public ChatFragment(User appUser, User contactUser, HTTPClient httpClient) {
+    public ChatFragment(User appUser, User contactUser, HttpClient httpClient) {
         this.appUser = appUser;
         this.contactUser = contactUser;
         this.chatMessages = new ArrayList<ChatMessage>();
@@ -93,12 +90,12 @@ public class ChatFragment extends Fragment {
         try {
             ArrayList<ChatMessageWithId> newChatMessages = new ArrayList<>();
             String url = "/get/messages?FROM_USER=" + contactUser.getId() + "&TO_USER=" + appUser.getId() + "&FROM_ID=" + lastMessageId;
-            newChatMessages.addAll(convertJsonToChatMessages((JSONArray) httpClient.GET(url)));
+            newChatMessages.addAll(convertJsonToChatMessages((JSONArray) httpClient.get(url)));
             // if new messages from other users fetched, prepare to play a notification sound
             playSound = newChatMessages.size() > 0;
 
             url = "/get/messages?FROM_USER=" + appUser.getId() + "&TO_USER=" + contactUser.getId() + "&FROM_ID=" + lastMessageId;
-            newChatMessages.addAll(convertJsonToChatMessages((JSONArray) httpClient.GET(url)));
+            newChatMessages.addAll(convertJsonToChatMessages((JSONArray) httpClient.get(url)));
 
             if (newChatMessages.size() > 0) {
                     sortAndSetMessages(newChatMessages);
@@ -160,7 +157,7 @@ public class ChatFragment extends Fragment {
         httpClient.executeAsync(() -> {
             try {
                 JSONObject json = convertChatMessageToJSON(chatMessage);
-                httpClient.POST("/post/message", json);
+                httpClient.post("/save/message", json);
                 getActivity().runOnUiThread(() -> chatView.getInputEditText().getText().clear());
             } catch (Throwable e) {
                 Log.e(TAG, e.getMessage(), e);
