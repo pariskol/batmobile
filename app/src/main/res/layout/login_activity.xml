@@ -9,6 +9,17 @@
     android:gravity="center"
     android:orientation="vertical">
 
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_weight="0.2"
+        android:layout_height="0dp"
+        android:text="BAT MOBILE"
+        android:gravity="center"
+        android:textSize="20dp"
+        android:textStyle="bold"
+        >
+
+    </TextView>
     <ImageView
         android:id="@+id/imageView"
         android:layout_width="148dp"
@@ -21,9 +32,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_weight="0"
-        android:backgroundTint="#FFFFFF"
         android:ems="10"
-        android:foregroundTint="#FFFFFF"
         android:hint="Username"
         android:inputType="textPersonName"
         android:textColor="@color/white"
@@ -34,9 +43,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_weight="0"
-        android:backgroundTint="#FFFFFF"
         android:ems="10"
-        android:foregroundTint="#FFFFFF"
         android:hint="Password"
         android:inputType="textPassword"
         android:textColor="@color/white"
